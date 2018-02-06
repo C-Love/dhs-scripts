@@ -26,6 +26,33 @@ def mainframe_date(date, format):
     return date_split
 
 
+def write_mainframe_date(date, format, month_coord, day_coord, year_coord):
+    date_split = date.split("/")
+    format = format.upper()
+    if len(date_split[0]) == 1:
+        date_split[0] = "0" + date_split[0]
+    if len(date_split[1]) == 1:
+        date_split[1] = "0" + date_split[1]
+    if format == "XX XX XX" or "XX XX":
+        if len(date_split[2]) == 4:
+            date_split[2] = date_split[2][2:]
+    elif format == "XX XX XXXX":
+        if len(date_split[2]) == 2:
+            date_split[2] = "20" + date_split[2]
+
+    if format == "XX XX":
+        del date_split[1]
+
+    if format == "XX XX XX" or "XX XX XXXX":
+        bzio.WriteScreen(date_split[0], month_coord[0], month_coord[1])
+        bzio.WriteScreen(date_split[1], day_coord[0], day_coord[1])
+        bzio.WriteScreen(date_split[2], year_coord[0], year_coord[1])
+
+    if format == "XX XX":
+        bzio.WriteScreen(date_split[0], month_coord[0], month_coord[1])
+        bzio.WriteScreen(date_split[1], year_coord[0], year_coord[1])
+
+
 def find_variable(opening_string, length_of_variable):
     search_result = bzio.Search(opening_string)
     row = search_result[1]
@@ -122,6 +149,16 @@ def PF9():
     bzio.WaitReady(0, 0)
 
 
+def PF19():
+    bzio.SendKey("<PF19>")
+    bzio.WaitReady(0, 0)
+
+
+def PF20():
+    bzio.SendKey("<PF20>")
+    bzio.WaitReady(0, 0)
+
+
 def navigate_to_MAXIS_screen(case_number, footer_month, footer_year, function_to_go_to, command_to_go_to):
     transmit()
     MAXIS_check = bzio.ReadScreen(5, 1, 39)
@@ -165,21 +202,28 @@ def navigate_to_MAXIS_screen(case_number, footer_month, footer_year, function_to
                 PF3()
                 SELF_check = bzio.ReadScreen(4, 2, 50)
 
-            bzio.WriteScreen(function_to_go_to, 16, 43)
-            bzio.WriteScreen("________", 18, 43)
-            bzio.WriteScreen(case_number, 18, 43)
-            bzio.WriteScreen(footer_month, 20, 43)
-            bzio.WriteScreen(footer_year, 20, 46)
-            bzio.WriteScreen(command_to_go_to, 21, 70)
-            transmit()
-
-            abended_check = bzio.ReadScreen(7, 9, 27)
-            if abended_check == "abended":
+            # TODO add a loop to wait for background
+            while SELF_check == "SELF":
+                if bzio.ReadScreen(22, 7, 32) == "Background transaction":
+                    bzio.WriteScreen("N", 12, 47)
+                    transmit()
+                bzio.WriteScreen(function_to_go_to, 16, 43)
+                bzio.WriteScreen("________", 18, 43)
+                bzio.WriteScreen(case_number, 18, 43)
+                bzio.WriteScreen(footer_month, 20, 43)
+                bzio.WriteScreen(footer_year, 20, 46)
+                bzio.WriteScreen(command_to_go_to, 21, 70)
                 transmit()
 
-            ERRR_check = bzio.ReadScreen(4, 2, 52)
-            if ERRR_check == "ERRR":
-                transmit()
+                abended_check = bzio.ReadScreen(7, 9, 27)
+                if abended_check == "abended":
+                    transmit()
+
+                ERRR_check = bzio.ReadScreen(4, 2, 52)
+                if ERRR_check == "ERRR":
+                    transmit()
+
+                SELF_check = bzio.ReadScreen(4, 2, 50)
 
 
 def start_a_blank_case_note():

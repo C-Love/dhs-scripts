@@ -125,7 +125,7 @@ class STAT_ABPS_panel:
             # code to incrementing to the next row (or next page of the list of children)
             row += 1
             if row == 18:
-                FuncLib.ShiftPF8()
+                FuncLib.PF20()
                 end_check = bzio.ReadScreen(9, 24, 14)
                 if end_check == "LAST PAGE":
                     break
@@ -244,7 +244,7 @@ class STAT_ACCI_panel:
             # checking to see if panel indicates another person is involved
             another_person = bzio.ReadScreen(7, 18, 66)
             if another_person == "More: +":
-                FuncLib.ShiftPF8()      # going to the next page
+                FuncLib.PF20()      # going to the next page
                 other_name = bzio.ReadScreen(38, 13, 63).replace("_", "")   # reading the next name
             else:
                 other_name = ""          # blanking out the variable to end the loop if there is no indication of another person
@@ -341,6 +341,7 @@ class STAT_ACCI_panel:
         bzio.WriteScreen(self.member, 20, 76)
         bzio.WriteScreen(self.instance, 20, 79)
         FuncLib.transmit()
+        FuncLib.PF9()           # Put panel in edit mode
 
         # All of the parameters will be written to new panel, if it is NONE then nothing will be entered
         bzio.WriteScreen(indicator, 12, 36)
@@ -585,19 +586,355 @@ class STAT_ACCT_panel:
 
 
 class STAT_ACUT_panel:
-    def __init__(self, case_number, footer_month, footer_year):
-        pass
+    """class to reference STAT/ACUT - needs member reference
+    Methods: gather_data -- get all infroamtion from existing panel
+             create_new -- creates a new ACUT panel for the member specified"""
+    def __init__(self, case_number, footer_month, footer_year, member):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
+        self.member = member
+
+    # No dictionaries for this class at this time
 
     def gather_data(self):
-        pass
+        """Method to get all information from STAT/ACUT for the specified member.
+        Class Propertied defined in this method:
+            self.shared -- Boolean for if shared or not
+            self.retro_heat_verif -- String of Y or N - would be None if left blank on panel
+            self.retro_heat_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.prosp_heat_verif -- String of Y or N - would be None if left blank on panel
+            self.prosp_heat_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.retro_air_verif -- String of Y or N - would be None if left blank on panel
+            self.retro_air_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.prosp_air_verif -- String of Y or N - would be None if left blank on panel
+            self.prosp_air_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.retro_elect_verif -- String of Y or N - would be None if left blank on panel
+            self.retro_elect_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.prosp_elect_verif -- String of Y or N - would be None if left blank on panel
+            self.prosp_elect_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.retro_fuel_verif -- String of Y or N - would be None if left blank on panel
+            self.retro_fuel_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.prosp_fuel_verif -- String of Y or N - would be None if left blank on panel
+            self.prosp_fuel_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.retro_garbage_verif -- String of Y or N - would be None if left blank on panel
+            self.retro_garbage_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.prosp_garbage_verif -- String of Y or N - would be None if left blank on panel
+            self.prosp_garbage_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.retro_water_verif -- String of Y or N - would be None if left blank on panel
+            self.retro_water_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.prosp_water_verif -- String of Y or N - would be None if left blank on panel
+            self.prosp_water_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.retro_sewer_verif -- String of Y or N - would be None if left blank on panel
+            self.retro_sewer_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.prosp_sewer_verif -- String of Y or N - would be None if left blank on panel
+            self.prosp_sewer_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.retro_other_verif -- String of Y or N - would be None if left blank on panel
+            self.retro_other_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.prosp_other_verif -- String of Y or N - would be None if left blank on panel
+            self.prosp_other_amount -- float of the amount on panel - would be None if left blank on the panel
+            self.dwp_phone -- boolean of if phone is used "_" defaults to False
+            self.dwp_amount -- float of the amount on panel - would be blank if no dwp phone"""
+        # navigate to STAT/ACUT for member
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ACUT")
+        bzio.WriteScreen(self.member, 20, 76)
+        FuncLib.transmit()
 
+        if bzio.ReadScreen(1, 6, 42) == "Y":        # reading the Y/N code for cshared and setting proprty as T/F
+            self.shared = True
+        else:
+            self.shared = False
+
+        # each line is read and the retro and prospective verifs and amounts are assigned to a property
+        # numbers are converted to floats
+        # HEAT
+        self.retro_heat_verif = bzio.ReadScreen(1, 10, 35).replace("_", "")
+        self.retro_heat_amount = bzio.ReadScreen(8, 10, 41).strip().replace("_", "")
+        if self.retro_heat_amount:
+            self.retro_heat_amount = float(self.retro_heat_amount)
+        self.prosp_heat_verif = bzio.ReadScreen(1, 10, 55).replace("_", "")
+        self.prosp_heat_amount = bzio.ReadScreen(8, 10, 61).strip().replace("_", "")
+        if self.prosp_heat_amount:
+            self.prosp_heat_amount = float(self.prosp_heat_amount)
+
+        # AIR
+        self.retro_air_verif = bzio.ReadScreen(1, 11, 35).replace("_", "")
+        self.retro_air_amount = bzio.ReadScreen(8, 11, 41).strip().replace("_", "")
+        if self.retro_air_amount:
+            self.retro_air_amount = float(self.retro_air_amount)
+        self.prosp_air_verif = bzio.ReadScreen(1, 11, 55).replace("_", "")
+        self.prosp_air_amount = bzio.ReadScreen(8, 11, 61).strip().replace("_", "")
+        if self.prosp_air_amount:
+            self.prosp_air_amount = float(self.prosp_air_amount)
+
+        # ELECTRIC
+        self.retro_elect_verif = bzio.ReadScreen(1, 12, 35).replace("_", "")
+        self.retro_elect_amount = bzio.ReadScreen(8, 12, 41).strip().replace("_", "")
+        if self.retro_elect_amount:
+            self.retro_elect_amount = float(self.retro_elect_amount)
+        self.prosp_elect_verif = bzio.ReadScreen(1, 12, 55).replace("_", "")
+        self.prosp_elect_amount = bzio.ReadScreen(8, 12, 61).strip().replace("_", "")
+        if self.prosp_elect_amount:
+            self.prosp_elect_amount = float(self.prosp_elect_amount)
+
+        # FUEL
+        self.retro_fuel_verif = bzio.ReadScreen(1, 13, 35).replace("_", "")
+        self.retro_fuel_amount = bzio.ReadScreen(8, 13, 41).strip().replace("_", "")
+        if self.retro_fuel_amount:
+            self.retro_fuel_amount = float(self.retro_fuel_amount)
+        self.prosp_fuel_verif = bzio.ReadScreen(1, 13, 55).replace("_", "")
+        self.prosp_fuel_amount = bzio.ReadScreen(8, 13, 61).strip().replace("_", "")
+        if self.prosp_fuel_amount:
+            self.prosp_fuel_amount = float(self.prosp_fuel_amount)
+
+        # GARBAGE
+        self.retro_garbage_verif = bzio.ReadScreen(1, 14, 35).replace("_", "")
+        self.retro_garbage_amount = bzio.ReadScreen(8, 14, 41).strip().replace("_", "")
+        if self.retro_garbage_amount:
+            self.retro_garbage_amount = float(self.retro_garbage_amount)
+        self.prosp_garbage_verif = bzio.ReadScreen(1, 14, 55).replace("_", "")
+        self.prosp_garbage_amount = bzio.ReadScreen(8, 14, 61).strip().replace("_", "")
+        if self.prosp_garbage_amount:
+            self.prosp_garbage_amount = float(self.prosp_garbage_amount)
+
+        # WATER
+        self.retro_water_verif = bzio.ReadScreen(1, 15, 35).replace("_", "")
+        self.retro_water_amount = bzio.ReadScreen(8, 15, 41).strip().replace("_", "")
+        if self.retro_water_amount:
+            self.retro_water_amount = float(self.retro_water_amount)
+        self.prosp_water_verif = bzio.ReadScreen(1, 15, 55).replace("_", "")
+        self.prosp_water_amount = bzio.ReadScreen(8, 15, 61).strip().replace("_", "")
+        if self.prosp_water_amount:
+            self.prosp_water_amount = float(self.prosp_water_amount)
+
+        # SEWER
+        self.retro_sewer_verif = bzio.ReadScreen(1, 16, 35).replace("_", "")
+        self.retro_sewer_amount = bzio.ReadScreen(8, 16, 41).strip().replace("_", "")
+        if self.retro_sewer_amount:
+            self.retro_sewer_amount = float(self.retro_sewer_amount)
+        self.prosp_sewer_verif = bzio.ReadScreen(1, 16, 55).replace("_", "")
+        self.prosp_sewer_amount = bzio.ReadScreen(8, 16, 61).strip().replace("_", "")
+        if self.prosp_sewer_amount:
+            self.prosp_sewer_amount = float(self.prosp_sewer_amount)
+
+        # OTHER
+        self.retro_other_verif = bzio.ReadScreen(1, 17, 35).replace("_", "")
+        self.retro_other_amount = bzio.ReadScreen(8, 17, 41).strip().replace("_", "")
+        if self.retro_other_amount:
+            self.retro_other_amount = float(self.retro_other_amount)
+        self.prosp_other_verif = bzio.ReadScreen(1, 17, 55).replace("_", "")
+        self.prosp_other_amount = bzio.ReadScreen(8, 17, 61).strip().replace("_", "")
+        if self.prosp_other_amount:
+            self.prosp_other_amount = float(self.prosp_other_amount)
+
+        # Reads if DWP phone is indicated and assigns T/F to property
+        if bzio.ReadScreen(1, 18, 55) is "Y":
+            self.dwp_phone = True
+            self.dwp_amount = float(bzio.ReadScreen(8, 18, 61))
+        else:
+            self.dwp_phone = False
+            self.dwp_amount = ""
+
+    def create_new(self, shared, heat=[], air=[], electric=[], fuel=[], garbage=[], water=[], sewer=[], other=[], phone=False):
+        """Method to add a new ACUT panel to the case
+        Note on optional arguments - they are all optional - however failing input at least one will not successfully create a new panel.
+        Argument Requirements:
+        shared -- Boolean
+        heat -- LIST in order - [retro verif, retro amount, prospective verif, prospective amount]
+        air -- LIST in order - [retro verif, retro amount, prospective verif, prospective amount]
+        electric -- LIST in order - [retro verif, retro amount, prospective verif, prospective amount]
+        fuel -- LIST in order - [retro verif, retro amount, prospective verif, prospective amount]
+        garbage -- LIST in order - [retro verif, retro amount, prospective verif, prospective amount]
+        water -- LIST in order - [retro verif, retro amount, prospective verif, prospective amount]
+        sewer -- LIST in order - [retro verif, retro amount, prospective verif, prospective amount]
+        other -- LIST in order - [retro verif, retro amount, prospective verif, prospective amount]
+        phone -- boolean - defaulted to false"""
+        # navigate to STAT/ACUT for member and creates a new panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ACUT")
+        bzio.WriteScreen(self.member, 20, 76)
+        bzio.WriteScreen("NN", 20, 79)
+        FuncLib.transmit()
+
+        # FIXME add function to check and ensure that new panel has been created and is in edit mode.
+
+        # Enters the code Y or N for shared based on the Boolean and sets the property for the class
+        if shared:
+            bzio.WriteScreen("Y", 6, 42)
+        else:
+            bzio.WriteScreen("N", 6, 42)
+        self.shared = shared
+
+        if heat:                                        # checks if heat has a value
+            bzio.WriteScreen(heat[0], 10, 35)           # writes retro verif to panel and assign to property
+            self.retro_heat_verif = heat[0]
+
+            bzio.WriteScreen(heat[1], 10, 41)           # writes retro amount to panel and assign to property
+            self.retro_heat_amount = float(heat[1])
+
+            bzio.WriteScreen(heat[2], 10, 55)           # writes prospective verif to panel and assign to property
+            self.prosp_heat_verif = heat[2]
+
+            bzio.WriteScreen(heat[3], 10, 61)           # writes prospective amount to panel and assigns to property
+            self.prosp_heat_amount = float(heat[3])
+        else:                                           # if list is empty the property names are called and defined as null
+            self.retro_heat_verif = None
+            self.retro_heat_amount = None
+            self.prosp_heat_verif = None
+            self.prosp_heat_amount = None
+
+        if air:
+            bzio.WriteScreen(air[0], 11, 35)           # writes retro verif to panel and assign to property
+            self.retro_air_verif = air[0]
+
+            bzio.WriteScreen(air[1], 11, 41)           # writes retro amount to panel and assign to property
+            self.retro_air_amount = float(air[1])
+
+            bzio.WriteScreen(air[2], 11, 55)           # writes prospective verif to panel and assign to property
+            self.prosp_air_verif = air[2]
+
+            bzio.WriteScreen(air[3], 11, 61)           # writes prospective amount to panel and assigns to property
+            self.prosp_air_amount = float(air[3])
+        else:                                           # if list is empty the property names are called and defined as null
+            self.retro_air_verif = None
+            self.retro_air_amount = None
+            self.prosp_air_verif = None
+            self.prosp_air_amount = None
+
+        if electric:
+            bzio.WriteScreen(electric[0], 12, 35)           # writes retro verif to panel and assign to property
+            self.retro_elect_verif = electric[0]
+
+            bzio.WriteScreen(electric[1], 12, 41)           # writes retro amount to panel and assign to property
+            self.retro_elect_amount = float(electric[1])
+
+            bzio.WriteScreen(electric[2], 12, 55)           # writes prospective verif to panel and assign to property
+            self.prosp_elect_verif = electric[2]
+
+            bzio.WriteScreen(electric[3], 12, 61)           # writes prospective amount to panel and assigns to property
+            self.prosp_elect_amount = float(electric[3])
+        else:                                           # if list is empty the property names are called and defined as null
+            self.retro_elect_verif = None
+            self.retro_elect_amount = None
+            self.prosp_elect_verif = None
+            self.prosp_elect_amount = None
+
+        if fuel:
+            bzio.WriteScreen(fuel[0], 13, 35)           # writes retro verif to panel and assign to property
+            self.retro_fuel_verif = fuel[0]
+
+            bzio.WriteScreen(fuel[1], 13, 41)           # writes retro amount to panel and assign to property
+            self.retro_fuel_amount = float(fuel[1])
+
+            bzio.WriteScreen(fuel[2], 13, 55)           # writes prospective verif to panel and assign to property
+            self.prosp_fuel_verif = fuel[2]
+
+            bzio.WriteScreen(fuel[3], 13, 61)           # writes prospective amount to panel and assigns to property
+            self.prosp_fuel_amount = float(fuel[3])
+        else:                                           # if list is empty the property names are called and defined as null
+            self.retro_fuel_verif = None
+            self.retro_fuel_amount = None
+            self.prosp_fuel_verif = None
+            self.prosp_fuel_amount = None
+
+        if garbage:
+            bzio.WriteScreen(garbage[0], 14, 35)           # writes retro verif to panel and assign to property
+            self.retro_garbage_verif = garbage[0]
+
+            bzio.WriteScreen(garbage[1], 14, 41)           # writes retro amount to panel and assign to property
+            self.retro_garbage_amount = float(garbage[1])
+
+            bzio.WriteScreen(garbage[2], 14, 55)           # writes prospective verif to panel and assign to property
+            self.prosp_garbage_verif = garbage[2]
+
+            bzio.WriteScreen(garbage[3], 14, 61)           # writes prospective amount to panel and assigns to property
+            self.prosp_garbage_amount = float(garbage[3])
+        else:                                           # if list is empty the property names are called and defined as null
+            self.retro_garbage_verif = None
+            self.retro_garbage_amount = None
+            self.prosp_garbage_verif = None
+            self.prosp_garbage_amount = None
+
+        if water:
+            bzio.WriteScreen(water[0], 15, 35)           # writes retro verif to panel and assign to property
+            self.retro_water_verif = water[0]
+
+            bzio.WriteScreen(water[1], 15, 41)           # writes retro amount to panel and assign to property
+            self.retro_water_amount = float(water[1])
+
+            bzio.WriteScreen(water[2], 15, 55)           # writes prospective verif to panel and assign to property
+            self.prosp_water_verif = water[2]
+
+            bzio.WriteScreen(water[3], 15, 61)           # writes prospective amount to panel and assigns to property
+            self.prosp_water_amount = float(water[3])
+        else:                                           # if list is empty the property names are called and defined as null
+            self.retro_water_verif = None
+            self.retro_water_amount = None
+            self.prosp_water_verif = None
+            self.prosp_water_amount = None
+
+        if sewer:
+            bzio.WriteScreen(sewer[0], 16, 35)           # writes retro verif to panel and assign to property
+            self.retro_sewer_verif = sewer[0]
+
+            bzio.WriteScreen(sewer[1], 16, 41)           # writes retro amount to panel and assign to property
+            self.retro_sewer_amount = float(sewer[1])
+
+            bzio.WriteScreen(sewer[2], 16, 55)           # writes prospective verif to panel and assign to property
+            self.prosp_sewer_verif = sewer[2]
+
+            bzio.WriteScreen(sewer[3], 16, 61)           # writes prospective amount to panel and assigns to property
+            self.prosp_sewer_amount = float(sewer[3])
+        else:                                           # if list is empty the property names are called and defined as null
+            self.retro_sewer_verif = None
+            self.retro_sewer_amount = None
+            self.prosp_sewer_verif = None
+            self.prosp_sewer_amount = None
+
+        if other:
+            bzio.WriteScreen(other[0], 17, 35)           # writes retro verif to panel and assign to property
+            self.retro_other_verif = other[0]
+
+            bzio.WriteScreen(other[1], 17, 41)           # writes retro amount to panel and assign to property
+            self.retro_other_amount = float(other[1])
+
+            bzio.WriteScreen(other[2], 17, 55)           # writes prospective verif to panel and assign to property
+            self.prosp_other_verif = other[2]
+
+            bzio.WriteScreen(other[3], 17, 61)           # writes prospective amount to panel and assigns to property
+            self.prosp_other_amount = float(other[3])
+        else:                                           # if list is empty the property names are called and defined as null
+            self.retro_other_verif = None
+            self.retro_other_amount = None
+            self.prosp_other_verif = None
+            self.prosp_other_amount = None
+
+        # if phone is set to true then Y willbe entered to the panel
+        # otherwise the phone indicator will be blank on the panel
+        if phone:
+            bzio.WriteScreen("Y", 18, 55)
+        self.dwp_phone = phone      # setting the phone boolean to the class property
+
+        FuncLib.transmit()
+
+        self.dwp_amount = bzio.ReadScreen(8, 18, 61)
+        self.dwp_amount = self.dwp_amount.strip()
+        if self.dwp_amount:
+            self.dwp_amount = float(self.dwp_amount)
+
+    # TODO create method to change a specific expense amount (should take parameter for which expense to change and a ditionary for each option)
+    # TODO create a method to change shared boolean and dwp phone boolean
 
 class STAT_ADDR_panel:
+    """class references STAT/ADDR
+    Methods: gather_data -- get all information from existing panel"""
     def __init__(self, case_number, footer_month, footer_year):
         self.case = case_number
         self.month = footer_month
         self.year = footer_year
 
+    # Dictionaries set up with details explaining codes on panels
+    # PF1 has this information stored - adding it here for reference within the class
+    # it is more helpful to have the explanations of the codes than just the bare codes
     global all_res_codes
     all_res_codes = {"BD": "Bois Forte - Deer Creek",
                      "BN": "Bois Forte - Nett Lake",
@@ -629,14 +966,13 @@ class STAT_ADDR_panel:
     def gather_data(self):
         """Method to gather information from ADDR and fill class properties"""
 
+        # Navigates to STAT/ADDR - no instance or member needed as there is only 1 in each case
         FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ADDR")
 
-        eff_month = bzio.ReadScreen(2, 4, 43)
-        eff_day = bzio.ReadScreen(2, 4, 46)
-        eff_year = bzio.ReadScreen(2, 4, 49)
+        # reading all information from the panel and assigning it to class properties
+        self.effective_date = "%s/%s/%s" % (bzio.ReadScreen(2, 4, 43), bzio.ReadScreen(2, 4, 46), bzio.ReadScreen(2, 4, 49))  # formatting date as mm/dd/yy
 
-        self.effective_date = "%s/%s/%s" % (eff_month, eff_day, eff_year)
-
+        # string variables have '_' in line - removing those because we don't write like that
         self.resi1 = bzio.ReadScreen(22, 6, 43).replace("_", "")
         self.resi2 = bzio.ReadScreen(22, 7, 43).replace("_", "")
         self.resi_city = bzio.ReadScreen(15, 8, 43).replace("_", "")
@@ -644,22 +980,24 @@ class STAT_ADDR_panel:
         self.resi_zip = bzio.ReadScreen(5, 9, 43)
         self.resi_cty = bzio.ReadScreen(2, 9, 66)
         verif_code = bzio.ReadScreen(2, 9, 74)
-        self.resi_verif = addr_verif_codes[verif_code]
-        if bzio.ReadScreen(1, 10, 43).replace("_", "") == "Y":
+        self.resi_verif = addr_verif_codes[verif_code]      # setting the verification to information from dictionary
+
+        if bzio.ReadScreen(1, 10, 43) == "Y":               # setting this property as a boolean instead of Y/N because that makes more sense
             self.homeless = True
         else:
             self.homeless = False
-        if bzio.ReadScreen(1, 10, 74) == "Y":
+
+        if bzio.ReadScreen(1, 10, 74) == "Y":               # only if on reservation will the script pull reservation information
             self.reservation = True
             self.reservation_code = bzio.ReadScreen(2, 11, 74)
-            self.reservation_name = all_res_codes[self.reservation_code]
+            self.reservation_name = all_res_codes[self.reservation_code]    # name set by dictionary defined above
         else:
             self.reservation = False
 
         self.living_situation = bzio.ReadScreen(22, 6, 43).replace("_", "")
 
-        if bzio.ReadScreen(22, 13, 43).replace("_", "") != "":
-            self.diff_mail = True
+        if bzio.ReadScreen(22, 13, 43).replace("_", "") != "":      # only reading all of the mailing address if it appears there is a mailing address
+            self.diff_mail = True                                   # sets a property to help identify if there is a mailing address
             self.mail1 = bzio.ReadScreen(22, 13, 43).replace("_", "")
             self.mail2 = bzio.ReadScreen(22, 14, 43).replace("_", "")
             self.mail_city = bzio.ReadScreen(15, 15, 43).replace("_", "")
@@ -668,10 +1006,12 @@ class STAT_ADDR_panel:
         else:
             self.diff_mail = False
 
+        # reading phone information and creating a list.
         self.phone_one = "%s-%s-%s" % (bzio.ReadScreen(3, 17, 45), bzio.ReadScreen(3, 17, 51), bzio.ReadScreen(4, 17, 55))
         self.phone_two = "%s-%s-%s" % (bzio.ReadScreen(3, 18, 45), bzio.ReadScreen(3, 18, 51), bzio.ReadScreen(4, 18, 55))
         self.phone_three = "%s-%s-%s" % (bzio.ReadScreen(3, 19, 45), bzio.ReadScreen(3, 19, 51), bzio.ReadScreen(4, 19, 55))
 
+        # this list can be used in a combobox so that a dialog can have the option to select known phone numbers
         self.phone_list = []
         if self.phone_one != "___-___-____":
             self.phone_list.append(self.phone_one)
@@ -688,528 +1028,1647 @@ class STAT_ADDR_panel:
 
 
 class STAT_ADME_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    """Class that references STAT/ADME - needs member input
+    Methods in this class: gather_data - to read all information on panel
+                           create_new - to create a new ADME panel for a specified member"""
+    def __init__(self, case_number, footer_month, footer_year, member):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
+        self.member = member
 
     def gather_data(self):
-        pass
+        """This method will read the panel and save to class properties
+        Class Properties: self.birthdate -- listed on ADME in mm/dd/yy format
+                          self.arrival_date -- date as listed on ADME in mm/dd/yy format
+                          self.cash_add_date -- date listed on ADME in mm/dd/yy format - will be None if date is not filled in
+                          self.emer_add_date -- date listed on ADME in mm/dd/yy format - will be None if date is not filled in
+                          self.snap_add_date -- date listed on ADME in mm/dd/yy format - will be None if date is not filled in"""
+
+        # navigate to the correct STAT/ADME panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ADME")
+        bzio.WriteScreen(self.member, 20, 76)
+        FuncLib.transmit()
+
+        if bzio.ReadScreen(1, 2, 73) != "0":                # checking to be sure a panel exists
+            self.birthdate = bzio.ReadScreen(8, 5, 36)      # reading birthdate and arrival date from ADME
+            self.arrival_date = bzio.ReadScreen(8, 7, 38)
+
+            # reads cash addendum/reporting date for each program and formats it in mm/dd/yy
+            self.cash_add_date = "%s/%s/%s" % (bzio.ReadScreen(8, 12, 38), bzio.ReadScreen(8, 12, 41), bzio.ReadScreen(8, 12, 44))     # cash
+            if self.cash_add_date == "__/__/__":        # if the date is not entered reset the property to None
+                self.cash_add_date = None
+
+            self.cash_add_date = "%s/%s/%s" % (bzio.ReadScreen(8, 14, 38), bzio.ReadScreen(8, 14, 41), bzio.ReadScreen(8, 14, 44))     # emergency
+            if self.cash_add_date == "__/__/__":        # if the date is not entered reset the property to None
+                self.cash_add_date = None
+
+            self.cash_add_date = "%s/%s/%s" % (bzio.ReadScreen(8, 16, 38), bzio.ReadScreen(8, 16, 41), bzio.ReadScreen(8, 16, 44))     # snap
+            if self.cash_add_date == "__/__/__":        # if the date is not entered reset the property to None
+                self.cash_add_date = None
+        else:
+            self.birthdate = None
+            self.arrival_date = None
+            self.cash_add_date = None
+            self.emer_add_date = None
+            self.snap_add_date = None
+
+    def create_new(self, cash_date, emer_date, fs_date):
+        """Method to create a new ADME panel for the specified member
+        Arguments: cash_date -- date to add person for cash
+                   emer_date -- date to add person for emergency assistance
+                   fs_date -- date to add person for fs/snap
+        All arguments are required - script must determine which are important."""
+
+        # navigate to the correct STAT/ADME panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ADME")
+        bzio.WriteScreen(self.member, 20, 76)
+        bzio.WriteScreen("NN", 20, 79)
+        FuncLib.transmit()
+
+        # FIXME Add function to check to be sure the panel is in edit mode
+
+        self.cash_add_date = cash_date          # assign cash date to class property
+        if self.cash_add_date:
+            FuncLib.write_mainframe_date(self.cash_add_date, "XX XX XX", [12, 38], [12, 41], [12, 44])
+
+        self.emer_add_date = emer_date          # assign emer date to class property
+        if self.emer_add_date:
+            FuncLib.write_mainframe_date(self.emer_add_date, "XX XX XX", [14, 38], [14, 41], [14, 44])
+
+        self.snap_add_date = fs_date            # assign fs date to class property
+        if self.snap_add_date:
+            FuncLib.write_mainframe_date(self.snap_add_date, "XX XX XX", [16, 38], [16, 41], [16, 44])
+
+        FuncLib.transmit()      # transmit to save the panel. The arrival date and birth date will autopopulate once panel is saved
+
+        self.birthdate = bzio.ReadScreen(8, 5, 36)      # reading birthdate and arrival date from ADME
+        self.arrival_date = bzio.ReadScreen(8, 7, 38)
 
 
 class STAT_ALIA_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    """Class to reference STAT/ALIA - member reference needed
+    Methods in this class: gather_data -- collect information from ALIA panel and assign to properties
+                           add_alias_name -- add one name to the ALIA panel
+                           add_secondary_ssn -- add one SSN to the ALIA panel"""
+    def __init__(self, case_number, footer_month, footer_year, member):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
+        self.member = member
 
     def gather_data(self):
-        pass
+        """Method to gather information for STAT/ALIA for the specific member indicated.
+        Properties created: self.alias_names -- Dictionary of names in ALIA - key is the MAXIS row, value is a list last name, first name, middle initial
+                            self.secondary_ssns -- Dictionary of ssns in ALIA - key is row, col, value is the ssn and verif
+                            self.alias_exists -- boolean to identify if any information is listed for member as alias names
+                            self.secondary_ssn_exists -- boolean to identify if a secondary ssn exists"""
+
+        # navigate to the correct STAT/ALIA panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ALIA")
+        bzio.WriteScreen(self.member, 20, 76)
+        FuncLib.transmit()
+
+        self.alias_names = {}               # setting the property to a dictionary so that adding key and value pairs is easiest
+        self.alias_exists = True            # setting this as true for the default - easier to read for a a false and reset if false.
+
+        row = 7
+        last_name = bzio.ReadScreen(17, row, 26).replace("_", "")          # reading the first line of the names
+        first_name = bzio.ReadScreen(12, row, 53).replace("_", "")
+        middle_initial = bzio.ReadScreen(1, row, 75).replace("_", "")
+
+        if first_name == "" and last_name == "":                            # if the first line is blank, setting the property to false
+            self.alias_exists = False
+
+        while last_name != "" and first_name != "":
+            self.alias_names[row] = [last_name, first_name, middle_initial]
+
+            row += 1
+            last_name = bzio.ReadScreen(17, row, 26).replace("_", "")          # reading each row in turn until a blank line is hit.
+            first_name = bzio.ReadScreen(12, row, 53).replace("_", "")
+            middle_initial = bzio.ReadScreen(1, row, 75).replace("_", "")
+
+        self.secondary_ssns = {}            # setting the property to a dictionary so adding key an value pairs is easist
+        self.secondary_ssn_exists = True    # setting to true as default - easier to identify if this is false, will reset if false
+
+        row = 15
+        col = 28
+
+        soc_sec_nbr = "%s-%s-%s" % (bzio.ReadScreen(3, row, col), bzio.ReadScreen(2, row, col + 4), bzio.ReadScreen(4, row, col + 7))
+
+        if soc_sec_nbr == "___-__-____":
+            self.secondary_ssn_exists = False
+
+        while soc_sec_nbr != "___-__-____":
+            ssn_verif = bzio.ReadScreen(1, row, col + 18)
+            if ssn_verif == "P":
+                ssn_code = "SSN Provided"
+            else:
+                ssn_code = "System Entered SSN Ver via an Interface"
+            self.secondary_ssns[row, col] = [soc_sec_nbr, ssn_code]
+
+            col += 25
+            if col == 78:
+                row += 1
+                col = 28
+
+            if row == 18:
+                break
+
+            soc_sec_nbr = "%s-%s-%s" % (bzio.ReadScreen(3, row, col), bzio.ReadScreen(2, row, col + 4), bzio.ReadScreen(4, row, col + 7))
+
+    def add_alias_name(self, last_name, first_name, middle):
+        """Method to add an alias name to the panel
+        This panel dows not need to be created as it is automatically created - it only needs to be updated.
+        Arguments: last_name -- last name to be entered in to ALIA
+                   first_name -- first name to be entered in to ALIA
+                   middle -- middle initial to be entered in ALIA"""
+
+        # navigate to the correct STAT/ALIA panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ALIA")
+        bzio.WriteScreen(self.member, 20, 76)
+        FuncLib.transmit()
+        FuncLib.PF9()           # Put panel in edit mode
+
+        # TODO May need error handling for if the ALIA name lines are FULL
+        # name is written on the last line.
+        # MAXIS will move the name to the top most available line once changes are submitted.
+        bzio.WriteScreen(last_name, 12, 26)
+        bzio.WriteScreen(first_name, 12, 53)
+        bzio.WriteScreen(middle, 12, 75)
+
+        FuncLib.transmit()                  # submits the information to the page and saves
+        self.gather_data()                  # gets the panel properties
+
+    def add_secondary_ssn(self, ssn):
+        """Method to add a ssn to the ALIA panel.
+        This panel does not need to be created as it is automatically created - it only needs to be updated.
+        Arguments: ssn -- the secondary ssn to document on ALIA. FORMAT: xxx-xx-xxxx
+                   do not need to assign a verif as the only worker entry is 'P'"""
+
+        # navigate to the correct STAT/ALIA panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ALIA")
+        bzio.WriteScreen(self.member, 20, 76)
+        FuncLib.transmit()
+        FuncLib.PF9()           # Put panel in edit mode
+
+        # TODO May need error handling for if the ALIA ssn lines are FULL
+        # ssn is written to the last place for ssns.
+        # MAXIS will move the ssn to the top most availablt line once hacanges are submitted.
+        ssn_list = ssn.split("-")                       # seperates each element of the ssn and writes them seperately into the panel
+        bzio.WriteScreen(ssn_list[0], 17, 53)
+        bzio.WriteScreen(ssn_list[1], 17, 57)
+        bzio.WriteScreen(ssn_list[2], 17, 60)
+        bzio.WriteScreen("P", 17, 71)                   # enters the verif code of 'P' as that is the only valid worker entry
+
+        FuncLib.transmit()                  # submits the information to the page and saves
+        self.gather_data()                  # gets the panel properties
 
 
 class STAT_ALTP_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    """Class to reference STAT/ALTP - NO instance/member needed
+    Methods in this class: gather_data() -- get information from ALTP panel and assign to properties
+                           create_new() -- create a new ALTP panel/add Alt Payee to case.
+                           end_payee() -- set date for payee to end
+                           change_payee() -- if current payee exists, will change the payee to new entry"""
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
+
+    global payee_reason
+    payee_reason = {"1": "Voluntary",
+                    "3": "IV-D N/Coop",
+                    "4": "Money Mismanagemnt",
+                    "5": "Death of Payee",
+                    "6": "Temp Absence of Payee",
+                    "7": "Guardian",
+                    "8": "Emergency Payee",
+                    "9": "MFIP Minor Residing with Parent"}
 
     def gather_data(self):
-        pass
+        """Method to read the ALTP panel and add all inforamtion to class properties.
+        Properties created: reason -- Information about why payee exists (full detail from PF1 menu)
+                            start_date -- date that payee change starts - format mm/dd/yy
+                            end_date -- date that payee ends - format mm/dd/yy - may be 'None' if blank
+                            name -- Name of payee
+                            street -- address house and street (line 1 and line 2)
+                            city -- city of address
+                            state -- 2 digit state abr code for address
+                            zip -- 5 digit zip code for address
+                            phone -- phone number of alt payee - format xxx-xxx-xxxx
+                            phone_ext -- estension """
+
+        # navigate to the STAT/ALTP panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ALTP")
+
+        reason_code = bzio.ReadScreen(1, 5, 37)
+        self.reason = payee_reason[reason_code]
+        self.start_date = "%s/%s/%s" % (bzio.ReadScreen(2, 8, 37), bzio.ReadScreen(2, 8, 40), bzio.ReadScreen(2, 8, 43))
+        self.end_date = "%s/%s/%s" % (bzio.ReadScreen(2, 8, 60), bzio.ReadScreen(2, 8, 63), bzio.ReadScreen(2, 8, 66))
+        if self.end_date == "__/__/__":
+            self.end_date = None
+
+        self.name = bzio.ReadScreen(30, 11, 37).replace("_", "")
+        self.street = "%s %s" % (bzio.ReadScreen(22, 12, 37).replace("_", ""), bzio.ReadScreen(22, 13, 37).replace("_", ""))
+        self.city = bzio.ReadScreen(15, 14, 37).replace("_", "")
+        self.state = bzio.ReadScreen(2, 14, 60).replace("_", "")
+        self.zip = bzio.ReadScreen(5, 14, 69).replace("_", "")
+
+        self.phone = "%s-%s-%s" % (bzio.ReadScreen(3, 16, 39), bzio.ReadScreen(3, 16, 45), bzio.ReadScreen(4, 16, 49))
+        if self.phone == "___-___-____":
+            self.phone = None
+        self.phone_ext = bzio.ReadScreen(3, 16, 60).replace("_", "")
+
+    def create_new(self, reason_code, start_date, name, street, city, state, zip, end_date=None, phone=None, ext=None):
+        """This method will create a new ALTP panel with alternate payee information provided by arguments.
+        Argument requirements: reason_code -- single digit code to explain the reason for alt payee (options: 1, 3, 4, 5, 6, 7, 8, 9)
+                               start_date -- date the alternate payee to begin
+                               name -- Name of the Alt Payee
+                               street -- street address of alt payee (lines 1 and 2 together)
+                               city -- city of address of alt payee
+                               state - state abbreviation of alt payee address
+                               zip -- 5 digit zip code of alt payee address
+            Optional Arguments:
+                               end_date -- date alt payee to be ended
+                               phone -- phone number of alt payee - format xxx-xxx-xxxx
+                               ext -- extension of phone number of alt payee"""
+
+        # navigate to the STAT/ALTP panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ALTP")
+        bzio.WriteScreen("NN", 20, 79)      # create new panel and transmit to put it in edit mode
+        FuncLib.transmit()
+
+        # writing arguments to the panel
+        bzio.WriteScreen(reason_code, 5, 37)
+        FuncLib.write_mainframe_date(start_date, "XX XX XX", [8, 37], [8, 40], [8, 43])     # using function to seperate and write date in panel
+        bzio.WriteScreen(name, 11, 37)
+        if len(street) <= 22:                       # addresses may be on more than one line
+            bzio.WriteScreen(street, 12, 37)        # maximum length of line is 22, if the address is smaller, one line is suficient
+        else:
+            row = 12
+            col = 37
+            word_list = street.split()              # split the address into a list of words
+            for word in word_list:                  # each word will be written seperately
+                if col + len(word) >= 58:           # evaluates location, to ensure the line break happens at the right place
+                    if row == 13:                   # if we have already reached the end of the second line - the loop will end - some words may be missed
+                        break
+                    row = 13
+                    col = 37
+                word = word + " "                   # add 1 space to the end of the word
+                bzio.WriteScreen(word, row, col)
+                col += len(word)                    # move to the next word location
+        bzio.WriteScreen(city, 14, 37)
+        bzio.WriteScreen(state, 14, 60)
+        bzio.WriteScreen(zip, 14, 69)
+
+        if end_date:                               # if there is an end date entered - date will be written to panel
+            FuncLib.write_mainframe_date(end_date, "XX XX XX", [8, 60], [8, 63], [8, 66])
+
+        if phone:                                   # if a phone number is entered
+            phone_list = phone.split("-")           # seperating phone number in to individual elements for entry
+            bzio.WriteScreen(phone_list[0], 16, 39)     # each element is written to the panel
+            bzio.WriteScreen(phone_list[1], 16, 45)
+            bzio.WriteScreen(phone_list[2], 16, 49)
+
+        if ext:                                     # if an extension is provided
+            bzio.WriteScreen(ext, 16, 60)           # it will be written to the panel
+
+        FuncLib.transmit()                          # transmit to save the date written to the panel
+        self.gather_data()                          # fill all the class properties using the gather_data method.
+
+    def end_payee(self, end_date):
+        """Method used to enter the end of alt payee
+        Argument: end_date -- date to end the alt payee"""
+        # navigate to the STAT/ALTP panel and put it in edit mode
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ALTP")
+        FuncLib.PF9()
+
+        # FIXME add function to be sure the panel is in edit mode
+
+        # entering the end date to the panel
+        FuncLib.write_mainframe_date(end_date, "XX XX XX", [8, 60], [8, 63], [8, 66])
+
+        FuncLib.transmit()                          # transmit to save the date written to the panel
+        # rereading the end date information and saving it to the class property
+        # doing it this way to make sure the property is formatted the same way as if it had been read using gather_data Method
+        self.end_date = "%s/%s/%s" % (bzio.ReadScreen(2, 8, 60), bzio.ReadScreen(2, 8, 63), bzio.ReadScreen(2, 8, 66))
+
+    def change_payee(self, reason_code, start_date, name, street, city, state, zip, end_date=None, phone=None, ext=None):
+        """Method to change the payee information on ALTP
+        Argument requirements: reason_code -- single digit code to explain the reason for alt payee (options: 1, 3, 4, 5, 6, 7, 8, 9)
+                               start_date -- date the alternate payee to begin
+                               name -- Name of the Alt Payee
+                               street -- street address of alt payee (lines 1 and 2 together)
+                               city -- city of address of alt payee
+                               state - state abbreviation of alt payee address
+                               zip -- 5 digit zip code of alt payee address
+            Optional Arguments:
+                               end_date -- date alt payee to be ended
+                               phone -- phone number of alt payee - format xxx-xxx-xxxx
+                               ext -- extension of phone number of alt payee"""
+        # navigate to the STAT/ALTP panel and put it in edit mode
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "ALTP")
+        FuncLib.PF9()
+
+        # FIXME add function to be sure the panel is in edit mode
+
+        # writing arguments to the panel
+        bzio.WriteScreen(reason_code, 5, 37)
+        FuncLib.write_mainframe_date(start_date, "XX XX XX", [8, 37], [8, 40], [8, 43])     # using function to seperate and write date in panel
+
+        spaces_to_add = 30 - len(name)              # add whitespace to the end of the string to be sure any old data is deleted
+        name = name.ljust(spaces_to_add)
+        bzio.WriteScreen(name, 11, 37)
+
+        bzio.WriteScreen(" " * 22, 12, 37)          # blanking out the address spaces before entering new data since writing here is more complex
+        bzio.WriteScreen(" " * 22, 13, 37)
+
+        if len(street) <= 22:                       # addresses may be on more than one line
+            bzio.WriteScreen(street, 12, 37)        # maximum length of line is 22, if the address is smaller, one line is suficient
+        else:
+            row = 12
+            col = 37
+            word_list = street.split()              # split the address into a list of words
+            for word in word_list:                  # each word will be written seperately
+                if col + len(word) >= 58:           # evaluates location, to ensure the line break happens at the right place
+                    if row == 13:                   # if we have already reached the end of the second line - the loop will end - some words may be missed
+                        break
+                    row = 13
+                    col = 37
+                word = word + " "                   # add 1 space to the end of the word
+                bzio.WriteScreen(word, row, col)
+                col += len(word)                    # move to the next word location
+
+        spaces_to_add = 15 - len(city)              # add white space to the end of the string to be sure any old data is deleted
+        city = city.ljust(spaces_to_add)
+        bzio.WriteScreen(city, 14, 37)              # write info and whitespace to the panel
+
+        bzio.WriteScreen(state, 14, 60)
+        bzio.WriteScreen(zip, 14, 69)
+
+        if end_date:                               # if there is an end date entered - date will be written to panel
+            FuncLib.write_mainframe_date(end_date, "XX XX XX", [8, 60], [8, 63], [8, 66])
+        else:
+            bzio.WriteScreen("  ", 8, 60)           # if no end date provided - blanking out the field in case old data is there
+            bzio.WriteScreen("  ", 8, 63)
+            bzio.WriteScreen("  ", 8, 66)
+
+        if phone:                                   # if a phone number is entered
+            phone_list = phone.split("-")           # seperating phone number in to individual elements for entry
+            bzio.WriteScreen(phone_list[0], 16, 39)     # each element is written to the panel
+            bzio.WriteScreen(phone_list[1], 16, 45)
+            bzio.WriteScreen(phone_list[2], 16, 49)
+        else:                                       # if no phone information provided - blanking out the field in case old data is here
+            bzio.WriteScreen("   ", 16, 39)
+            bzio.WriteScreen("   ", 16, 45)
+            bzio.WriteScreen("    ", 16, 49)
+
+        if ext:                                     # if an extension is provided
+            bzio.WriteScreen(ext, 16, 60)           # it will be written to the panel
+        else:                                       # if no extension provided - blanking out the field in case old data is here
+            bzio.WriteScreen("   ", 16, 60)
+
+        FuncLib.transmit()                          # transmit to save the date written to the panel
+        self.gather_data()                          # fill all the class properties using the gather_data method.
 
 
 class STAT_AREP_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    """This class references the STAT/AREP panel
+    NO member or instance needed for this panel
+    Methods in this class: gather_data -- collect information from an existing panel
+                           create_new -- create a new panel and fill in AREP information"""
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
-        pass
+        """This method will gather information from an existing AREP panel and add the information to class properties.
+        Properties created: AREP_exists -- boolean if AREP information is present
+                            name -- AREP's name (string)
+                            street -- the street address of the AREP - will include both lines (string)
+                            city -- city of AREP's address (string)
+                            state -- state abbrv code of AREP's address (string)
+                            zip -- zip code of AREP's address (string)
+                            disq -- boolean to determine if AREP is disqualified or not
+                            months_disq -- months to disqualify AREP (string)
+                            phone_one -- AREP's first phone number - format xxx-xxx-xxxx (will be None if blank)
+                            ext_one -- extension of AREP's first phone number
+                            phone_two -- AREP's second phone number - format xxx-xxx-xxxx (will be None if blank)
+                            ext_two -- extension of AREP's second phone number
+                            forms_to_AREP -- boolean for if forms should go to AREP
+                            MMIS_mail_to_AREP - boolean for if MMIS mail should go to AREP
+
+                            FS_alt_rep_exists -- boolean if Food Support Alternat Representative exists
+                            FS_alt_rep_name -- FS Alternate Representative's name (string)
+                            FS_alt_rep_street -- the street address of the FS Alt Rep - will include both lines (string)
+                            FS_alt_rep_city -- city of FS Alt Rep's address (string)
+                            FS_alt_rep_state -- state abbrv code of FS Alt Rep's address (string)
+                            FS_alt_rep_zip -- zip code of FS Alt Rep's address (string)
+                            FS_alt_rep_disq -- boolean to determine if FS Alt Rep is disqualified or not
+                            FS_alt_rep_months_disq -- months to disqualify FS Alt Rep (string)
+                            FS_alt_rep_phone_one -- FS Alt Rep's first phone number - format xxx-xxx-xxxx (will be None if blank)
+                            FS_alt_rep_ext_one -- extension of FS Alt Rep's first phone number
+                            FS_alt_rep_phone_two -- FS Alt Rep's second phone number - format xxx-xxx-xxxx (will be None if blank)
+                            FS_alt_rep_ext_two -- extension of FS Alt Rep's second phone number"""
+
+        # navigate to the STAT/AREP panel
+        at_AREP = bzio.ReadScreen(4, 2, 53)
+        if at_AREP != "AREP":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "AREP")
+
+        self.AREP_exists = True
+        self.FS_alt_rep_exists = True
+
+        # reading the information from the top of the panel and assigning it to properties - AREP
+        self.name = bzio.ReadScreen(37, 4, 32).replace("_", "")
+        if self.name is "":
+            self.AREP_exists = False
+        self.street = "%s %s" % (bzio.ReadScreen(22, 5, 32).replace("_", ""), bzio.ReadScreen(22, 6, 32).replace("_", ""))   # reads both lines and concantenate
+        self.street = self.street.strip()           # removing space from the property
+        self.city = bzio.ReadScreen(15, 7, 32).replace("_", "")
+        self.state = bzio.ReadScreen(2, 7, 55)
+        self.zip = bzio.ReadScreen(5, 7, 64)
+
+        self.phone_one = "%s-%s-%s" % (bzio.ReadScreen(3, 8, 34), bzio.ReadScreen(3, 8, 40), bzio.ReadScreen(4, 8, 44))     # formatting the phone number
+        if self.phone_one == "___-___-____":                                                                                # set to none if blank
+            self.phone_one = None
+        self.ext_one = bzio.ReadScreen(3, 8, 55).replace("_", "")
+
+        self.phone_two = "%s-%s-%s" % (bzio.ReadScreen(3, 9, 34), bzio.ReadScreen(3, 9, 40), bzio.ReadScreen(4, 9, 44))     # formatting the phone number
+        if self.phone_two == "___-___-____":                                                                                # set to none if blank
+            self.phone_two = None
+        self.ext_two = bzio.ReadScreen(3, 9, 55).replace("_", "")
+
+        if bzio.ReadScreen(1, 5, 77) == "Y":                        # If disqualify is 'Y' then this AREP is disqualified - set to true
+            self.disq = True
+        else:
+            self.disq = False
+        self.months_disq = bzio.ReadScreen(2, 6, 77).replace("_", "")
+
+        self.forms_to_AREP = False                          # setting this to false as default
+        if bzio.ReadScreen(1, 10, 45) == "Y":               # if 'Y' code found - this will change the boolean to True
+            self.forms_to_AREP = True
+
+        self.MMIS_mail_to_AREP = False                      # setting this to false as default
+        if bzio.ReadScreen(1, 10, 77) == "Y":               # if 'Y' code found - this will change the boolean to True
+            self.MMIS_mail_to_AREP = True
+
+        # reading the information from the bottom of the panel and assigning it to properties - FS Alt Rep
+        self.FS_alt_rep_name = bzio.ReadScreen(37, 13, 32).replace("_", "")
+        if self.FS_alt_rep_name is "":
+            self.FS_alt_rep_exists = False
+        # reads both lines and concantenates
+        self.FS_alt_rep_street = "%s %s" % (bzio.ReadScreen(22, 14, 32).replace("_", ""), bzio.ReadScreen(22, 15, 32).replace("_", ""))
+        self.FS_alt_rep_street = self.FS_alt_rep_street.strip()           # removing space from the property
+        self.FS_alt_rep_city = bzio.ReadScreen(15, 16, 32).replace("_", "")
+        self.FS_alt_rep_state = bzio.ReadScreen(2, 16, 55)
+        self.FS_alt_rep_zip = bzio.ReadScreen(5, 16, 64)
+
+        # formatting the phone number
+        self.FS_alt_rep_phone_one = "%s-%s-%s" % (bzio.ReadScreen(3, 17, 34), bzio.ReadScreen(3, 17, 40), bzio.ReadScreen(4, 17, 44))
+        if self.FS_alt_rep_phone_one == "___-___-____":             # set to none if blank
+            self.FS_alt_rep_phone_one = None
+        self.FS_alt_rep_ext_one = bzio.ReadScreen(3, 17, 55).replace("_", "")
+
+        # formatting the phone number
+        self.FS_alt_rep_phone_two = "%s-%s-%s" % (bzio.ReadScreen(3, 18, 34), bzio.ReadScreen(3, 18, 40), bzio.ReadScreen(4, 18, 44))
+        if self.FS_alt_rep_phone_two == "___-___-____":             # set to none if blank
+            self.FS_alt_rep_phone_two = None
+        self.FS_alt_rep_ext_two = bzio.ReadScreen(3, 18, 55).replace("_", "")
+
+        if bzio.ReadScreen(1, 14, 77) == "Y":                        # If disqualify is 'Y' then this AREP is disqualified - set to true
+            self.FS_alt_rep_disq = True
+        else:
+            self.FS_alt_rep_disq = False
+        self.FS_alt_rep_months_disq = bzio.ReadScreen(2, 15, 77).replace("_", "")
+
+    def update_auth_rep(self, name, street, city, state, zip, disq="N", forms_to_AREP="Y", MMIS_mail_to_AREP="Y",
+                        phone_one=None, ext_one=None, phone_two=None, ext_two=None, months_of_disq=None):
+        """Method to add or change an Authorized Representative.
+        If panel exists, method will simply update, if no panel exists, one will be created.
+        Arguments: name -- name of AREP
+                   street/city/state/zip -- address of AREP
+                   disq -- if AREP is disqualified as an AREP - default to N
+                   forms_to_AREP -- if MAXIS mail goes to AREP - defaulted to Y
+                   MMIS_mail_to_AREP -- if MMIS mail goies to AREP - defaulted to Y
+            Optional Arguments:
+                   phone_one -- AREP phone number (xxx-xxx-xxxx format)
+                   ext_one -- AREP phone one extension
+                   phone_two -- AREP phone number (xxx-xxx-xxxx format)
+                   ext_two -- AREP phone one extension
+                   months_of_disq -- number of months of disq - needed if disq is set to Y"""
+
+        # navigate to the STAT/AREP panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "AREP")
+
+        # putting the panel in edit mode
+        if bzio.ReadScreen(1, 2, 73) == "0":    # if no panel exists - create a new one
+            bzio.WriteScreen("NN", 20, 79)
+            FuncLib.transmit()
+        else:                                   # if a panel does exists - put in edit mode
+            FuncLib.PF9()
+
+        # FIXME add function to be sure AREP panel is in edit mode.
+
+        # each of these args needs spaces added to the end in case we are replacing data instead of creating a new entry
+        spaces_to_add = 37 - len(name)              # determine how many spaces
+        name = name + (" " * spaces_to_add)         # add the spaces to the end of the word
+        bzio.WriteScreen(name, 4, 32)               # write the word to the panel
+
+        bzio.WriteScreen(" " * 22, 5, 32)           # blanking out the address spaces before entering new data since writing here is more complex
+        bzio.WriteScreen(" " * 22, 6, 32)
+
+        if len(street) <= 22:                       # addresses may be on more than one line
+            bzio.WriteScreen(street, 5, 32)         # maximum length of line is 22, if the address is smaller, one line is suficient
+        else:
+            row = 5
+            col = 32
+            word_list = street.split()              # split the address into a list of words
+            for word in word_list:                  # each word will be written seperately
+                if col + len(word) >= 53:           # evaluates location, to ensure the line break happens at the right place
+                    if row == 6:                   # if we have already reached the end of the second line - the loop will end - some words may be missed
+                        break
+                    row = 6
+                    col = 32
+                word = word + " "                   # add 1 space to the end of the word
+                bzio.WriteScreen(word, row, col)
+                col += len(word)                    # move to the next word location
+
+        spaces_to_add = 15 - len(city)              # determine how many spaces
+        city = city + (" " * spaces_to_add)         # add the spaces to the end of the word
+        bzio.WriteScreen(city, 7, 32)
+
+        # these don't need spaces as they are fixed lengths
+        bzio.WriteScreen(state, 7, 55)
+        bzio.WriteScreen(zip, 7, 64)
+
+        if phone_one:                               # if a phone number is entered
+            phone_list = phone_one.split("-")           # seperating phone number in to individual elements for entry
+            bzio.WriteScreen(phone_list[0], 8, 34)     # each element is written to the panel
+            bzio.WriteScreen(phone_list[1], 8, 40)
+            bzio.WriteScreen(phone_list[2], 8, 44)
+
+            if ext_one:                             # extension only makes sense if a phone is entered
+                bzio.WriteScreen(ext_one, 8, 55)
+        else:                                       # if no phone information provided - blanking out the field in case old data is here
+            bzio.WriteScreen("   ", 8, 34)
+            bzio.WriteScreen("   ", 8, 40)
+            bzio.WriteScreen("    ", 8, 44)
+
+        if phone_two:                               # if a phone number is entered
+            phone_list = phone_two.split("-")           # seperating phone number in to individual elements for entry
+            bzio.WriteScreen(phone_list[0], 9, 34)     # each element is written to the panel
+            bzio.WriteScreen(phone_list[1], 9, 40)
+            bzio.WriteScreen(phone_list[2], 9, 44)
+
+            if ext_two:                             # extension only makes sense if a phone is entered
+                bzio.WriteScreen(ext_one, 9, 55)
+        else:                                       # if no phone information provided - blanking out the field in case old data is here
+            bzio.WriteScreen("   ", 9, 34)
+            bzio.WriteScreen("   ", 9, 40)
+            bzio.WriteScreen("    ", 9, 44)
+
+        # writing in the disq and mail options
+        bzio.WriteScreen(disq, 5, 77)
+        bzio.WriteScreen(forms_to_AREP, 10, 45)
+        bzio.WriteScreen(MMIS_mail_to_AREP, 10, 77)
+
+        if months_of_disq:                          # if months of disq are indicated - write to the panel.
+            bzio.WriteScreen(months_of_disq, 6, 77)
+
+        submition_check = ""
+        while submition_check != "ENTER A":
+            FuncLib.transmit()                              # once all information is added to the panel - transmit to save
+            submition_check = bzio.ReadScreen(7, 24, 2)     # reading to see if panel information has been saved
+        self.gather_data()                                  # filling all the class properties with the new information
+
+    def update_fs_alt_rep(self, name, street, city, state, zip, disq="N", phone_one=None, ext_one=None, phone_two=None, ext_two=None, months_of_disq=None):
+        """Method to add or change a Food Support Alternate Representative.
+        If panel exists, method will simply update, if no panel exists, one will be created.
+        Note that this method will send the case through background to correctly update MONY/DISB
+        Arguments: name -- name of AltRep
+                   street/city/state/zip -- address of AltRep
+                   disq -- if AltRep is disqualified as an AltRep - default to N
+            Optional Arguments:
+                   phone_one -- AltRep phone number (xxx-xxx-xxxx format)
+                   ext_one -- AltRep phone one extension
+                   phone_two -- AltRep phone number (xxx-xxx-xxxx format)
+                   ext_two -- AltRep phone one extension
+                   months_of_disq -- number of months of disq - needed if disq is set to Y"""
+
+        # navigate to the STAT/AREP panel
+        FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "AREP")
+
+        # putting the panel in edit mode
+        if bzio.ReadScreen(1, 2, 73) == "0":    # if no panel exists - create a new one
+            bzio.WriteScreen("NN", 20, 79)
+            FuncLib.transmit()
+        else:                                   # if a panel does exists - put in edit mode
+            FuncLib.PF9()
+
+        # FIXME add function to be sure AREP panel is in edit mode.
+
+        # each of these args needs spaces added to the end in case we are replacing data instead of creating a new entry
+        spaces_to_add = 37 - len(name)              # determine how many spaces
+        name = name + (" " * spaces_to_add)         # add the spaces to the end of the word
+        bzio.WriteScreen(name, 13, 32)               # write the word to the panel
+
+        bzio.WriteScreen(" " * 22, 14, 32)           # blanking out the address spaces before entering new data since writing here is more complex
+        bzio.WriteScreen(" " * 22, 15, 32)
+
+        if len(street) <= 22:                       # addresses may be on more than one line
+            bzio.WriteScreen(street, 14, 32)         # maximum length of line is 22, if the address is smaller, one line is suficient
+        else:
+            row = 14
+            col = 32
+            word_list = street.split()              # split the address into a list of words
+            for word in word_list:                  # each word will be written seperately
+                if col + len(word) >= 53:           # evaluates location, to ensure the line break happens at the right place
+                    if row == 15:                   # if we have already reached the end of the second line - the loop will end - some words may be missed
+                        break
+                    row = 15
+                    col = 32
+                word = word + " "                   # add 1 space to the end of the word
+                bzio.WriteScreen(word, row, col)
+                col += len(word)                    # move to the next word location
+
+        spaces_to_add = 15 - len(city)              # determine how many spaces
+        city = city + (" " * spaces_to_add)         # add the spaces to the end of the word
+        bzio.WriteScreen(city, 16, 32)
+
+        # these don't need spaces as they are fixed lengths
+        bzio.WriteScreen(state, 16, 55)
+        bzio.WriteScreen(zip, 16, 64)
+
+        if phone_one:                               # if a phone number is entered
+            phone_list = phone_one.split("-")           # seperating phone number in to individual elements for entry
+            bzio.WriteScreen(phone_list[0], 17, 34)     # each element is written to the panel
+            bzio.WriteScreen(phone_list[1], 17, 40)
+            bzio.WriteScreen(phone_list[2], 17, 44)
+
+            if ext_one:                             # extension only makes sense if a phone is entered
+                bzio.WriteScreen(ext_one, 17, 55)
+        else:                                       # if no phone information provided - blanking out the field in case old data is here
+            bzio.WriteScreen("   ", 17, 34)
+            bzio.WriteScreen("   ", 17, 40)
+            bzio.WriteScreen("    ", 17, 44)
+
+        if phone_two:                               # if a phone number is entered
+            phone_list = phone_two.split("-")           # seperating phone number in to individual elements for entry
+            bzio.WriteScreen(phone_list[0], 18, 34)     # each element is written to the panel
+            bzio.WriteScreen(phone_list[1], 18, 40)
+            bzio.WriteScreen(phone_list[2], 18, 44)
+
+            if ext_two:                             # extension only makes sense if a phone is entered
+                bzio.WriteScreen(ext_one, 18, 55)
+        else:                                       # if no phone information provided - blanking out the field in case old data is here
+            bzio.WriteScreen("   ", 18, 34)
+            bzio.WriteScreen("   ", 18, 40)
+            bzio.WriteScreen("    ", 18, 44)
+
+        # writing in the disq and mail options
+        bzio.WriteScreen(disq, 14, 77)
+
+        if months_of_disq:                          # if months of disq are indicated - write to the panel.
+            bzio.WriteScreen(months_of_disq, 15, 77)
+
+        submition_check = ""
+        while submition_check != "ENTER A":
+            FuncLib.transmit()                              # once all information is added to the panel - transmit to save
+            submition_check = bzio.ReadScreen(7, 24, 2)     # reading to see if panel information has been saved
+            empty_panel = bzio.ReadScreen(15, 24, 2)
+            if empty_panel == "NAME IS MISSING":
+                bzio.WriteScreen("DEL", 20, 71)
+
+        FuncLib.PF3()                                       # command to get to MONY/DISB after a change to AREP for FS Alt Rep
+        check_for_DISB = bzio.ReadScreen(4, 2, 51)          # If Alt Rep is changed, MAXIS will open MONY/DISB upon sending through background
+        while check_for_DISB != "DISB":                     # looking to get to DISB
+            FuncLib.PF3()
+            check_for_DISB = bzio.ReadScreen(4, 2, 51)
+            SELF_check = bzio.ReadScreen(4, 2, 50)          # Escape from the loop in case MONY/DISB does not come up
+            if SELF_check is "SELF":
+                break
+
+        # entering the EBT Additional Adult code on MONY DISB and navigating out of the case
+        if name.strip() is "":                              # need to strip the name because there are a lot of spaces added
+            bzio.WriteScreen("  ", 13, 35)                  # if no name is on ALt Rep - the code should be blanked out
+        else:
+            bzio.WriteScreen("55", 13, 35)                  # if a name is on Alt Rep - the code is always 55
+
+        check_for_WRAP = ""                                 # after entering the additional adult code, MAXIS goes to STAT/WRAP
+        while check_for_WRAP != "WRAP":
+            FuncLib.transmit()
+            check_for_WRAP = bzio.ReadScreen(4, 2, 46)
+
+        bzio.WriteScreen("AREP", 20, 71)                    # navigating manually back to AREP manually for gather_data
+        FuncLib.transmit()
+
+        self.gather_data()                                  # filling all the class properties with the new information
+
+        FuncLib.PF3()                                       # going back to SELF as STAT behaves oddly with MONY/DISB until gone through background
+        # entering the EBT Additional Adult code on MONY DISB - because it shows up again
+        if name.strip() is "":                              # need to strip the name because there are a lot of spaces added
+            bzio.WriteScreen("  ", 13, 35)                  # if no name is on ALt Rep - the code should be blanked out
+        else:
+            bzio.WriteScreen("55", 13, 35)                  # if a name is on Alt Rep - the code is always 55
+
+        FuncLib.PF3()                                       # going back to self - must do this when changing Alt Rep to ensure MONY/DISB
+        FuncLib.PF3()                                       # doesn't mess with future navigation code.
 
 
 class STAT_BILS_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    """This class references the BILS panel.
+    There are NO member or instance parameters for this panel as only one exists for each case.
+    Methods in this class: gather_data -- reads the BILS panel and fills class properties
+                           create_new -- creates a new panel for the case
+                           add_bill -- adds one bill to the BILS panel - panel must exist"""
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
+
+    global bill_services
+    bill_services = {"01": "Health Professional",
+                     "03": "Surgery",
+                     "04": "Chiropractic",
+                     "05": "Maternity & Reproductive",
+                     "07": "Hearing",
+                     "08": "Vision",
+                     "09": "Hospital",
+                     "11": "Hospice",
+                     "13": "SNF",
+                     "14": "Dental",
+                     "15": "Rx Drug/Non-Durable Supply",
+                     "16": "Home Health",
+                     "17": "Diagnostic",
+                     "18": "Mental Health",
+                     "19": "Rehabilitation Habilitation",
+                     "21": "Durable Medical Equipment/Supplies",
+                     "22": "Medical Transportation",
+                     "24": "Waivered Services",
+                     "25": "Medicare Premium",
+                     "26": "Dental or Health Premium",
+                     "27": "Remedial Care",
+                     "28": "Non-FFP MCRE Service",
+                     "30": "Alternative Care",
+                     "31": "MCSHN",
+                     "32": "Insurance Extension Program",
+                     "34": "CW-TCM",
+                     "37": "Pay-In Spenddown",
+                     "42": "Access Services",
+                     "43": "Chemical Dependency",
+                     "44": "Nutrition Service",
+                     "45": "Organ/tissue Transplant",
+                     "46": "Out-of-Area Services",
+                     "47": "Copayment/Deductible",
+                     "49": "Preventative Care",
+                     "99": "Other"}
+
+    global bill_verifications
+    bill_verifications = {"01": "Billing Statement",
+                          "02": "Explanation of Benefits",
+                          "03": "Client Statement - Medical Transport Only",
+                          "04": "Credit/Loan Statement",
+                          "05": "Provider Statement",
+                          "06": "Other",
+                          "NO": "No Verification Provided"}
+
+    global all_expense_types
+    all_expense_types = {"H": "Health Insurance, Other Premium",
+                         "P": "Not Covered, Non-Reimbursed",
+                         "M": "Old, Unpaid Medical Bills",
+                         "R": "Reimburseable"}
 
     def gather_data(self):
-        pass
+        """Method will gather all the information from BILS
+        Properties generated: self.bills_exist -- boolean to identify if any bills are listed on the panel
+                              self.all_bills -- this returns a list of all the bills
+                                                each item in the list is a list of all the details of the bill
+                                                each individual list is set up as follows:
+                                                INDEX -- ELEMENT
+                                                0     -- Reference Number of HH Member who incurred expense
+                                                1     -- Date of bill
+                                                2     -- Service bill is for - SEE DICTIONARY - bill_services
+                                                3     -- Gross bill ($ amount before any third party payment)
+                                                4     -- Third Party Payments made on bill
+                                                5     -- Verification of bill - SEE DICTIONARY - bill_verifications
+                                                6     -- Expense Type - SEE DICTIONARY - all_expense_types
+                                                7     -- OLD PRI - set the order in which old bills are applied
+                                                8     -- Dependent indicator - boolean - True if bill is for a dependedn NOT in the HH
+                                                9     -- PAGE of panel the bill is on
+                                                10    -- ROW the bill is listed on in panel"""
+
+        # navigate to BILS panel in MAXIS
+        at_BILS = bzio.ReadScreen(4, 2, 54)
+        if at_BILS != "BILS":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "BILS")
+
+        while bzio.ReadScreen(10, 24, 14) != "FIRST PAGE":      # ensuring we are starting from page 1
+            FuncLib.PF19()
+
+        if bzio.ReadScreen(2, 6, 26) != "__":   # checking to be sure that a bill exists on the panel
+            self.bills_exist = True             # sets the variable to if a bill exists
+        else:
+            self.bills_exist = False
+
+        self.all_bills = []                     # defining the property as a list
+        row = 6                                 # setting the start of variables
+        page = 1
+
+        # this will loop until all the bills are read on each page of the BILS panel
+        # each bill entry will be added to a list as a list of all the details
+        next_bill = bzio.ReadScreen(2, row, 26)
+        while next_bill != "__":
+
+            # reading each line of the BILS panel
+            ref_nbr = bzio.ReadScreen(2, row, 26)
+            bill_date = "%s/%s/%s" % (bzio.ReadScreen(2, row, 30), bzio.ReadScreen(2, row, 33), bzio.ReadScreen(2, row, 36))    # format as a date
+            serv_code = bzio.ReadScreen(2, row, 40)
+            grs_amt = float(bzio.ReadScreen(9, row, 45).strip())        # formating as a number for maths
+            pymts = bzio.ReadScreen(9, row, 57).strip()                 # reading the third payments field and trimming
+            if pymts == "_________":                                    # this may be blank - handling for reading blank as 0
+                pymts = 0.0
+            else:
+                pymts = float(pymts)                                    # if not blank - converiting to a number for maths
+            ver_code = bzio.ReadScreen(2, row, 67)
+            exp_typ = bzio.ReadScreen(1, row, 71)
+            old_pri = bzio.ReadScreen(2, row, 75).replace("_", "")      # this may be blank - taking out the underlines if so
+            dpd_ind = bzio.ReadScreen(1, row, 79)                       # reading the code then redefining as a boolean
+            if dpd_ind == "Y":
+                dpd_ind = True
+            else:
+                dpd_ind = False
+
+            # all of the found information will be added to the list
+            self.all_bills.append([ref_nbr,                         # INDEX - 0 -- Refernce number of the HH Member who incurred the bill
+                                   bill_date,                       # INDEX - 1 -- date of service of the bill
+                                   bill_services[serv_code],        # INDEX - 2 -- type of service of the bill - detail is filled from dictionary bill_servies
+                                   grs_amt,                         # INDEX - 3 -- Gross amount of bill - as a float
+                                   pymts,                           # INDEX - 4 -- amount of any third party payments on bill - as a float
+                                   bill_verifications[ver_code],    # INDEX - 5 -- verification -   detail from dictionary bill_verifications
+                                   all_expense_types[exp_typ],      # INDEX - 6 -- Type of Expense - detail from dictionary all_expense_types
+                                   old_pri,                         # INDEX - 7 -- Change priority - may be blank
+                                   dpd_ind,                         # INDEX - 8 -- Boolean of if bill is for a dependent not in HH
+                                   page,                            # INDEX - 9 -- page that the bill can be found in the panel
+                                   row])                            # INDEX - 10 -- row that the bill can be found on the panel
+
+            row += 1               # advancing the row
+            if row == 18:          # this is the end of the page
+                FuncLib.PF20()  # goes to the next page
+                if bzio.ReadScreen(9, 24, 14) == "LAST PAGE":       # if there are no more pages, the loop will stop
+                    break
+                page += 1       # if we went to a next page, then increasing the page number and resets the row number
+                row = 6
+
+            next_bill = bzio.ReadScreen(2, row, 26)                 # reads the next ref_nbr to see if we should loop again
+
+    def add_bill(self, ref_number, date_of_bill, service, gross_amt, payment_amt, verif, expense_type, old_priority=None, depdnt_indc=False):
+        """Method to add bill to BILS panel.
+        If no panel exists, one will be created.
+        Argument requirements: ref_number -- reference number of HH member who incurred the bill
+                               date_of_bill -- date of medical service
+                               service -- type of medical service - use code from dictionary bill_services
+                               gross_amt -- ross amount of the original bill
+                               payment_amt -- amount to already paid by third party
+                               verif -- verification of bill, use codes from dictionary bill_verifications
+                               expense type -- type of bill - use codes from dictionary all_expense_types
+                               old_priority -- use this to reset priority - default to None
+                               depdnt_indc -- boolean for if bill is for a dependent who is not in the household - default to False"""
+
+        # navigate to BILS panel in MAXIS
+        at_BILS = bzio.ReadScreen(4, 2, 54)
+        if at_BILS != "BILS":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "BILS")
+
+        while bzio.ReadScreen(10, 24, 14) != "FIRST PAGE":      # ensuring we are starting from page 1
+            FuncLib.PF19()
+
+        # putting the panel in edit mode
+        if bzio.ReadScreen(1, 2, 73) == "0":    # if no panel exists - create a new one
+            bzio.WriteScreen("NN", 20, 79)
+            FuncLib.transmit()
+        else:                                   # if a panel does exists - put in edit mode
+            FuncLib.PF9()
+
+        # a bill can be entered to last line on the page and MAXIS will rearage according to the sort (defaulted to DATE)
+        # reading the last line to make sure it is blank
+        while bzio.ReadScreen(2, 17, 26) != "__":
+            FuncLib.PF20()
+
+        # now all the arguments will be written to the blank line
+        bzio.WriteScreen(ref_number, 17, 26)                # writing the reference number
+        FuncLib.write_mainframe_date(date_of_bill, "XX XX XX", [17, 30], [17, 33], [17, 36])    # writing the date in the each space
+        bzio.WriteScreen(service, 17, 40)                   # writing the service code
+        bzio.WriteScreen(gross_amt, 17, 45)                 # write the gross amount of bill
+        if payment_amt == 0:                                # resetting this to a blank if set to 0 because BILS doesn't like 0
+            payment_amt = ""
+        bzio.WriteScreen(payment_amt, 17, 57)               # writing any payment amount
+        bzio.WriteScreen(verif, 17, 67)                     # writing in the verification code
+        bzio.WriteScreen(expense_type, 17, 71)              # writing in the expense type code
+        if old_priority:                                    # if this exists - writing in old priority
+            bzio.WriteScreen(old_priority, 17, 75)
+        if depdnt_indc:                                     # if dependent indicator is tru, a Y code will be entered
+            bzio.WriteScreen("Y", 17, 79)
+
+        FuncLib.transmit()          # transmit once to take the panel out of edit mode
+        FuncLib.transmit()          # second transmit resolves the sort for all the bills
+
+        self.gather_data()          # now all of the data will be gathered and stored in class properties
 
 
 class STAT_BUDG_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    """Class references STAT/BUDG panel.
+    NO instance or member parameter required as only one panel per case.
+    Methods in this class: gather_data -- get all information from the panel and save to class properties
+                           change_budget -- will update the budget period"""
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
+
+    global budget_src_codes
+    budget_src_codes = {"M": "MAXIS",
+                        "W": "Worker",
+                        "C": "Converted"}
 
     def gather_data(self):
-        pass
+        """This method will pull data from STAT/BUDG
+        Properties generated: self.hc_app_date -- date of hc application - format mm/dd/yy
+                              self.current_budg_start -- Month and year of current budget period start month - format MM/YY
+                              self.current_budg_end -- Month and year of current budget period last month - format MM/YY
+                              self.current_budg_src -- source of budget generation
+                              self.past_budgets -- list of all past budgets"""
+
+        # navigate to BUDG panel in MAXIS
+        at_BILS = bzio.ReadScreen(4, 2, 52)
+        if at_BILS != "BUDG":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "BUDG")
+
+        # reading information from the panel and assigning to Properties
+        # also formatting dates
+        self.hc_app_date = "%s/%s/%s" % (bzio.ReadScreen(2, 4, 64), bzio.ReadScreen(2, 4, 67), bzio.ReadScreen(2, 4, 70))
+        self.current_budg_start = "%s/%s" % (bzio.ReadScreen(2, 10, 35), bzio.ReadScreen(2, 10, 38))
+        self.current_budg_end = "%s/%s" % (bzio.ReadScreen(2, 10, 46), bzio.ReadScreen(2, 10, 49))
+        source = bzio.ReadScreen(1, 10, 58)
+        self.current_budg_src = budget_src_codes[source]                # filling detail about source from dictionary
+
+        self.past_budgets = []          # setting this property as a list
+        row = 11                        # setting the row
+
+        # setting the variable for a loop
+        next_budget = bzio.ReadScreen(2, row, 35)       # next will loop to get each line of past budget period details
+        while next_budget != "  ":
+            begin_dt = "%s/%s" % (bzio.ReadScreen(2, row, 35), bzio.ReadScreen(2, row, 38))     # reading the begin date and formatting
+            end_dt = "%s/%s" % (bzio.ReadScreen(2, row, 46), bzio.ReadScreen(2, row, 49))       # readint the end date and formatting
+            source = bzio.ReadScreen(1, row, 58)
+
+            self.past_budgets.append([begin_dt,                  # INDEX - 0 -- begining of budg pd - format MM/YY
+                                     end_dt,                    # INDEX - 1 -- ending of budg pd - format MM/YY
+                                     budget_src_codes[source],  # INDEX - 2 -- detail about source of the budget
+                                     row])                       # INDEX - 3 -- saving the row of this budget
+
+            row += 1            # incrementing the row for the next line
+            next_budget = bzio.ReadScreen(2, row, 35)
+
+    def change_budget(self, budget_begin_month):
+        """This method will update the 'Override Budget Period'
+        Only the begin month in format MM/YY - method will determine the end month
+        THIS METHOD WILL SEND THE CASE THROUGH BACKGROUND"""
+
+        # navigate to BUDG panel in MAXIS
+        at_BILS = bzio.ReadScreen(4, 2, 52)
+        if at_BILS != "BUDG":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "BUDG")
+
+        # setting the panel to edit mode
+        FuncLib.PF9()
+
+        # spliting the month and year for entry to the panel
+        begin_month = budget_begin_month[:2]
+        begin_year = budget_begin_month[3:]
+
+        month_number = int(begin_month)         # changing the month to an integer for maths
+        year_number = int(begin_year)
+        last_month_number = month_number + 5    # last month is five months after the first
+        if last_month_number > 12:              # there are only 12 months
+            last_month_number -= 12             # this will go to the next year
+            year_number += 1
+
+        end_month = str(last_month_number)      # setting these as strings
+        if len(end_month) is 1:                 # adding the leading 0 to the month if needed
+            end_month = "0" + end_month
+        end_year = str(year_number)
+
+        # writing the new budget to the panel
+        bzio.WriteScreen(begin_month, 5, 64)
+        bzio.WriteScreen(begin_year, 5, 67)
+        bzio.WriteScreen(end_month, 5, 72)
+        bzio.WriteScreen(end_year, 5, 75)
+
+        FuncLib.transmit()      # saving the information to the panel
+        FuncLib.PF3()           # exiting STAT
+        FuncLib.PF3()
+
+        self.gather_data()
 
 
 class STAT_BUSI_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_CARS_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_CASH_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_COEX_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_DCEX_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_DFLN_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_DIET_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_DISA_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_DISQ_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_DSTT_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_EATS_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_EMMA_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_EMPS_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_FACI_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_FCFC_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_FCPL_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_FMED_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_HCMI_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_HCRE_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_HEST_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_IMIG_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_INSA_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_JOBS_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_LUMP_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_MEDI_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_MEMB_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_MEMI_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_MISC_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_MMSA_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_MSUR_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_OTHR_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_PACT_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_PARE_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_PBEN_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_PDED_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_PREG_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_PROG_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_RBIC_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_REMO_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_RESI_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_REST_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_REVW_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_SANC_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_SCHL_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_SECU_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_SHEL_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_SIBL_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_SPON_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_STEC_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_STIN_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_STRK_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_STWK_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_SWKR_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_TIME_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_TRAC_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_TRAN_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_TYPE_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_UNEA_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_WKEX_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
 
 
 class STAT_WREG_panel:
-    def __init__(self, case_number, footer_month, footer_year, member, instance):
-        pass
+    def __init__(self, case_number, footer_month, footer_year):
+        self.case = case_number
+        self.month = footer_month
+        self.year = footer_year
 
     def gather_data(self):
         pass
