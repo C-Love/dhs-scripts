@@ -2075,14 +2075,352 @@ class STAT_BUDG_panel:
 
 
 class STAT_BUSI_panel:
-    def __init__(self, case_number, footer_month, footer_year):
+    """Class references STAT/BUSI panel.
+    This panel requires MEMBER and INSTANCE parameters
+    Methods in this class: gather_data -- reading the panel and assigning information to class properties
+                           create_new -- create a new BUSI panel
+                           update_amount -- update the income information for one program"""
+    def __init__(self, case_number, footer_month, footer_year, member, instance):
         self.case = case_number
         self.month = footer_month
         self.year = footer_year
+        self.member = member
+        self.instance = instance
+
+    global busi_income_types
+    busi_income_types = {"01": "Farming",
+                         "02": "Real Estate",
+                         "03": "Home Product Sales",
+                         "04": "Other Sales",
+                         "05": "Personal Services",
+                         "06": "Paper Route",
+                         "07": "In Home Daycare",
+                         "08": "Rental Income",
+                         "09": "Other"}
+
+    global busi_verifications
+    busi_verifications = {"1": "Income Tax Returns",
+                          "2": "Receipts of Sales/Purchases",
+                          "3": "Client Business Records/Ledger",
+                          "4": "Pending Out State Verification",
+                          "6": "Other Document",
+                          "N": "No Verification Provided",
+                          "_": "Blank"}
+
+    def read_float_from_BZ(self, length, row, col):
+        MAXIS_number = bzio.ReadScreen(length, row, col)
+        MAXIS_number = MAXIS_number.strip()
+        MAXIS_number = MAXIS_number.replace("_", "")
+
+        if MAXIS_number == "":
+            MAXIS_number = 0
+
+        MAXIS_number = float(MAXIS_number)
+        return MAXIS_number
 
     def gather_data(self):
-        pass
+        """Method to read panel and generate class properties.
+        Properties created: business_type -- detail of income type code (string)
+                            income_start -- date of income start (mm/dd/yy format)
+                            income_end -- date of income end (mm/dd/yy format) - may be None if not filled
+                            for cash and snap
+                            _retro_net -- amount from main panel for retro net amount (float)
+                            _prosp_net -- amount from main panel for prospective net amount (float)
+                            _retro_gross -- amount from income calctulation pop-up (float)
+                            _prosp_gross -- amount from income calctulation pop-up (float)
+                            _retro_exp -- counted expense amount from income calctulation pop-up (float)
+                            _prosp_exp -- counted expense amount from income calctulation pop-up (float)
+                            _inc_verif -- full detail of the income verification (string)
+                            _exp_verif -- full detail of the expense verification (string)
 
+                            for ive, hc_methA, and hc_methB  (these do not have retro information)
+                            _net -- amount from main panel for net amount (float)
+                            _gross -- amount from income calculation pop-up (float)
+                            _expense -- counted expense amount from income calculation pop-up (float)
+                            _inc_verif -- full detail of the income verification (string)
+                            _exp_verif -- full detail of the expense verification (string)
+
+                            retro_rept_hrs -- reported hours for the retro month
+                            prosp_rept_hrs -- reported hours for the prospective month
+                            min_wage_hrs_retro -- calculated minimum wage hours for the retro month
+                            min_wage_hrs_prosp -- calculated minimum wage hours for the prosp month
+                            self_emp_method -- full detail of the self employment method chosen (string)
+                            method_date -- date self employment method was chosen (mm/dd/yy format)
+
+                            inc_est_A_total -- amount from income estimate pop up - Method A total
+                            inc_est_B_total -- amount from income estimate pop up - Method B total
+                            inc_est_A_exp -- amount of expenses from income estimate pop up - Method A total
+                            inc_est_B_exp -- amount of expenses from income estimate pop up - Method B total
+                            inc_est_A_gross -- sum amount from income estimate pop up - Method A total
+                            inc_est_B_gross -- sum amount from income estimate pop up - Method B total
+                            """
+
+        # navigate to BUSI panel in MAXIS
+        at_BILS = bzio.ReadScreen(4, 2, 51)
+        if at_BILS != "BUSI":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "BUSI")
+        bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
+        bzio.WriteScreen(self.instance, 20, 79)
+        FuncLib.transmit()
+
+        # TODO create and insert method to verify BUSI panel exists before trying to read
+
+        # reading all infromation from panel
+        income_type_code = bzio.ReadScreen(2, 5, 37)                    # income code - for key value for dictionary
+        self.business_type = busi_income_types[income_type_code]        # assigning property with full detail from dictionary busi_income_types
+        self.income_start = "%s/%s/%s" % (bzio.ReadScreen(2, 5, 55), bzio.ReadScreen(2, 5, 58), bzio.ReadScreen(2, 5, 61))  # reading and formating start date
+        self.income_end = "%s/%s/%s" % (bzio.ReadScreen(2, 5, 72), bzio.ReadScreen(2, 5, 75), bzio.ReadScreen(2, 5, 78))    # reading and formating end end date
+        if self.income_end == "__/__/__":
+            self.income_end = None
+
+        # reads each number from the panel and converts it to a float for maths
+        self.cash_retro_net = self.read_float_from_BZ(8, 8, 55)     # CASH retro NET - from main panel
+        self.cash_prosp_net = self.read_float_from_BZ(8, 8, 69)     # CASH prosp NET - from main panel
+
+        self.snap_retro_net = self.read_float_from_BZ(8, 10, 55)     # SNAP retro NET - from main panel
+        self.snap_prosp_net = self.read_float_from_BZ(8, 10, 69)     # SNAP prosp NET - from main panel
+
+        self.ive_prosp_net = self.read_float_from_BZ(8, 9, 69)     # IV-E prosp NET - from main panel
+
+        self.hc_methA_prosp_net = self.read_float_from_BZ(8, 11, 69)     # HC Method A prosp NET - from main panel
+
+        self.hc_methB_prosp_net = self.read_float_from_BZ(8, 12, 69)     # HC Method B prosp NET - from main panel
+
+        # reading the hours from the main page
+        self.retro_rept_hrs = self.read_float_from_BZ(3, 13, 60)        # retro reported hours
+        self.prosp_rept_hrs = self.read_float_from_BZ(3, 13, 74)        # prospective reported horus
+        self.min_wage_hrs_retro = self.read_float_from_BZ(3, 14, 69)    # retro minimum wage hours
+        self.min_wage_hrs_prosp = self.read_float_from_BZ(3, 14, 74)    # prospective minimum wage hours
+
+        # reading information about the self employment method
+        self_emp_code = bzio.ReadScreen(2, 16, 53)              # reads the code from the panel
+        if self_emp_code == "01":                               # assigns the detail of the code
+            self.self_emp_method = "50'%' Gross Income"
+        elif self_emp_code == "02":
+            self.self_emp_method = "Tax Forms"
+        else:
+            self.self_emp_method = None
+        self.method_date = "%s/%s/%s" % (bzio.ReadScreen(2, 16, 63), bzio.ReadScreen(2, 16, 66), bzio.ReadScreen(2, 16, 69))
+
+        # selects the Gross Income Calculation Pop-up and opens it
+        bzio.WriteScreen("X", 6, 26)
+        FuncLib.transmit()
+
+        # reading all the infromation from the pop up and assigning to properties
+        self.cash_retro_gross = self.read_float_from_BZ(8, 9, 43)               # CASH prog information - formatted by function to make FLOAT
+        self.cash_prosp_gross = self.read_float_from_BZ(8, 9, 59)
+        self.cash_inc_verif = busi_verifications[bzio.ReadScreen(1, 9, 73)]     # assigning full deatil from PF1 menu instead of just the code
+        self.cash_retro_exp = self.read_float_from_BZ(8, 15, 43)
+        self.cash_prosp_exp = self.read_float_from_BZ(8, 15, 59)
+        self.cash_exp_verif = busi_verifications[bzio.ReadScreen(1, 15, 73)]    # assigning full deatil from PF1 menu instead of just the code
+
+        self.snap_retro_gross = self.read_float_from_BZ(8, 11, 43)              # SNAP prog information - formatted by function to make FLOAT
+        self.snap_prosp_gross = self.read_float_from_BZ(8, 11, 59)
+        self.snap_inc_verif = busi_verifications[bzio.ReadScreen(1, 11, 73)]    # assigning full deatil from PF1 menu instead of just the code
+        self.snap_retro_exp = self.read_float_from_BZ(8, 17, 43)
+        self.snap_prosp_exp = self.read_float_from_BZ(8, 17, 59)
+        self.snap_exp_verif = busi_verifications[bzio.ReadScreen(1, 17, 73)]    # assigning full deatil from PF1 menu instead of just the code
+
+        self.ive_prosp_gross = self.read_float_from_BZ(8, 10, 59)               # IV-E prog information - formatted by function to make FLOAT
+        self.ive_inc_verif = busi_verifications[bzio.ReadScreen(1, 10, 73)]     # assigning full deatil from PF1 menu instead of just the code
+        self.ive_prosp_exp = self.read_float_from_BZ(8, 16, 59)
+        self.ive_exp_verif = busi_verifications[bzio.ReadScreen(1, 16, 73)]     # assigning full deatil from PF1 menu instead of just the code
+
+        self.hc_methA_prosp_gross = self.read_float_from_BZ(8, 12, 59)               # HC Method A prog information - formatted by function to make FLOAT
+        self.hc_methA_inc_verif = busi_verifications[bzio.ReadScreen(1, 12, 73)]     # assigning full deatil from PF1 menu instead of just the code
+        self.hc_methA_prosp_exp = self.read_float_from_BZ(8, 18, 59)
+        self.hc_methA_exp_verif = busi_verifications[bzio.ReadScreen(1, 18, 73)]     # assigning full deatil from PF1 menu instead of just the code
+
+        self.hc_methB_prosp_gross = self.read_float_from_BZ(8, 13, 59)               # HC Method B prog information - formatted by function to make FLOAT
+        self.hc_methB_inc_verif = busi_verifications[bzio.ReadScreen(1, 13, 73)]     # assigning full deatil from PF1 menu instead of just the code
+        self.hc_methB_prosp_exp = self.read_float_from_BZ(8, 19, 59)
+        self.hc_methB_exp_verif = busi_verifications[bzio.ReadScreen(1, 19, 73)]     # assigning full deatil from PF1 menu instead of just the code
+
+        FuncLib.PF3()           # exiting the pop-up to go back to the main panel
+
+        # Opening the HC Income Estimate Pop-Up
+        bzio.WriteScreen("X", 17, 27)
+        FuncLib.transmit()
+
+        # reading all values from the pop-up and assigning to class properties
+        self.inc_est_A_total = self.read_float_from_BZ(8, 7, 54)
+        self.inc_est_B_total = self.read_float_from_BZ(8, 8, 54)
+        self.inc_est_A_exp = self.read_float_from_BZ(8, 11, 54)
+        self.inc_est_B_exp = self.read_float_from_BZ(8, 12, 54)
+        self.inc_est_A_gross = self.read_float_from_BZ(8, 15, 54)
+        self.inc_est_B_gross = self.read_float_from_BZ(8, 16, 54)
+        self.inc_est_hrs = self.read_float_from_BZ(3, 18, 58)
+
+        FuncLib.PF3()       # closing the pop-up window
+
+    def create_new(self, start_date, income_type, program, prosp_gross, income_verif,
+                   prosp_expense, expense_verif, prosp_hours, method, date_selection,
+                   retro_gross=None, retro_expense=None, retro_hours=None):
+        """Method will create a new BUSI panel and enter income detail for 1 program
+        Argument requirements: start_date -- Start date of income
+                               income_type -- code for type of self employment income
+                               program -- which program is income information provided for (cash, iv-e, snap, hcA, hcB)
+                               prosp_gross -- amount of total gross income for prospective
+                               income_verif -- verif code for the income amount
+                               prosp_expense -- amount of expenses to count for prospective
+                               expense_verif -- verif code for the expense amount
+                               prosp_hours -- reported prospective hours
+                               method -- self employment budget method code (01 or 02)
+                               date_selection -- the date that the self employment method was selected
+                    Optional arguments:
+                               retro_gross -- amount of total gross income
+                               retro_expense -- amount of retro counted expenses
+                               retro_hours -- reported retro hours"""
+        # navigate to BUSI panel in MAXIS
+        at_BILS = bzio.ReadScreen(4, 2, 51)
+        if at_BILS != "BUSI":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "BUSI")
+        bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
+        bzio.WriteScreen("NN", 20, 79)
+        FuncLib.transmit()
+
+        instance = bzio.ReadScreen(2, 2, 72).strip()    # assigning the instance to class variable
+        if len(instance) == 1:
+            instance = "0" + instance
+        self.instance = instance
+
+        # writing the information to the panel
+        bzio.WriteScreen(income_type, 5, 37)                                                # income type code
+        FuncLib.write_mainframe_date(start_date, "XX XX XX", [5, 55], [5, 58], [5, 61])     # start date of income
+        bzio.WriteScreen(prosp_hours, 13, 74)                                               # prospective hours
+        if retro_hours:                                                                     # retro hours if provided
+            bzio.WriteScreen(retro_hours, 13, 60)
+        bzio.WriteScreen(method, 16, 53)                                                    # self employment method and date
+        FuncLib.write_mainframe_date(date_selection, "XX XX XX", [16, 63], [16, 66], [16, 69])
+
+        program = program.upper()           # converting the program variable to upper case for comparing
+        bzio.MsgBox(program)
+        if program == "CASH":               # defining the row to write information to based on the program provided
+            inc_row = 9
+            exp_row = 15
+        elif program is "IV-E":
+            inc_row = 10
+            exp_row = 16
+        elif program is "SNAP":
+            inc_row = 11
+            exp_row = 17
+        elif program is "HCA":
+            inc_row = 12
+            exp_row = 18
+        elif program is "HCB":
+            inc_row = 13
+            exp_row = 19
+
+        # selects the Gross Income Calculation Pop-up and opens it
+        bzio.WriteScreen("X", 6, 26)
+        FuncLib.transmit()
+
+        bzio.WriteScreen(prosp_gross, inc_row, 59)          # wrting the gross amount to the pop-up panel
+        bzio.WriteScreen(income_verif, inc_row, 73)         # writing the verif
+        if retro_gross:                                     # if a retro amount was provided - writing it in
+            bzio.WriteScreen(retro_gross, inc_row, 43)
+
+        bzio.WriteScreen(prosp_expense, exp_row, 59)        # writing the expense amount to the pop-up panel
+        bzio.WriteScreen(expense_verif, exp_row, 73)        # writing the verif
+        if retro_expense:                                   # if a retro expense was provdied - writing it in
+            bzio.WriteScreen(retro_expense, exp_row, 43)
+
+        FuncLib.PF3()           # going back to the main panel.
+
+        FuncLib.transmit()      # submitting the panel and taking out of edit mode
+
+        self.gather_data()      # filling all class properties
+
+    def update_amount(self, program, prosp_gross, income_verif,
+                   prosp_expense, expense_verif, prosp_hours=None,
+                   retro_gross=None, retro_expense=None, retro_hours=None):
+        """Method will update the gross amount, expense, verification, reported hours for one program
+        Argument requirements: program -- which program is income information provided for (cash, iv-e, snap, hcA, hcB)
+                               prosp_gross -- amount of total gross income for prospective
+                               income_verif -- verif code for the income amount
+                               prosp_expense -- amount of expenses to count for prospective
+                               expense_verif -- verif code for the expense amount
+                    Optional arguments:
+                               prosp_hours -- reported prospective hours
+                               retro_gross -- amount of total gross income
+                               retro_expense -- amount of retro counted expenses
+                               retro_hours -- reported retro hours"""
+
+        # navigate to BUSI panel in MAXIS
+        at_BILS = bzio.ReadScreen(4, 2, 51)
+        if at_BILS != "BUSI":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "BUSI")
+        bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
+        bzio.WriteScreen(self.instance, 20, 79)
+        FuncLib.transmit()
+
+        FuncLib.PF9()       # putting panel in edit mode
+
+        # TODO create and insert method to verify BUSI panel is in edit mode
+
+        if prosp_hours:                                 # prospective hours if provided
+            prosp_hours = str(prosp_hours)          # adding spaces to the end of the information to be sure to overwrite old data
+            spaces_to_add = 3 - len(prosp_hours)
+            prosp_hours = prosp_hours + (" " * spaces_to_add)
+            bzio.WriteScreen(prosp_hours, 13, 74)
+        if retro_hours:                                 # retro hours if provided
+            retro_hours = str(retro_hours)          # adding spaces to the end of the information to be sure to overwrite old data
+            spaces_to_add = 3 - len(retro_hours)
+            retro_hours = retro_hours + (" " * spaces_to_add)
+            bzio.WriteScreen(retro_hours, 13, 60)
+
+        program = program.upper()           # converting the program variable to upper case for comparing
+        if program is "CASH":               # defining the row to write information to based on the program provided
+            inc_row = 9
+            exp_row = 15
+        elif program is "IV-E":
+            inc_row = 10
+            exp_row = 16
+        elif program is "SNAP":
+            inc_row = 11
+            exp_row = 17
+        elif program is "HCA":
+            inc_row = 12
+            exp_row = 18
+        elif program is "HCB":
+            inc_row = 13
+            exp_row = 19
+
+        # selects the Gross Income Calculation Pop-up and opens it
+        bzio.WriteScreen("X", 6, 26)
+        FuncLib.transmit()
+
+        prosp_gross = str(prosp_gross)          # adding spaces to the end of the information to be sure to overwrite old data
+        spaces_to_add = 8 - len(prosp_gross)
+        prosp_gross = prosp_gross + (" " * spaces_to_add)
+
+        bzio.WriteScreen(prosp_gross, inc_row, 59)          # wrting the gross amount to the pop-up panel
+        bzio.WriteScreen(income_verif, inc_row, 73)         # writing the verif
+        if retro_gross:                                     # if a retro amount was provided - writing it in
+            retro_gross = str(retro_gross)          # adding spaces to the end of the information to be sure to overwrite old data
+            spaces_to_add = 8 - len(retro_gross)
+            retro_gross = retro_gross + (" " * spaces_to_add)
+
+            bzio.WriteScreen(retro_gross, inc_row, 43)
+
+        prosp_expense = str(prosp_expense)          # adding spaces to the end of the information to be sure to overwrite old data
+        spaces_to_add = 8 - len(prosp_expense)
+        prosp_expense = prosp_expense + (" " * spaces_to_add)
+
+        bzio.WriteScreen(prosp_expense, exp_row, 59)        # writing the expense amount to the pop-up panel
+        bzio.WriteScreen(expense_verif, exp_row, 73)        # writing the verif
+        if retro_expense:                                   # if a retro expense was provdied - writing it in
+            retro_expense = str(retro_expense)          # adding spaces to the end of the information to be sure to overwrite old data
+            spaces_to_add = 8 - len(retro_expense)
+            retro_expense = retro_expense + (" " * spaces_to_add)
+
+            bzio.WriteScreen(retro_expense, exp_row, 43)
+
+        FuncLib.PF3()           # going back to the main panel.
+
+        FuncLib.transmit()      # submitting the panel and taking out of edit mode
+
+        self.gather_data()      # filling all class properties
 
 class STAT_CARS_panel:
     def __init__(self, case_number, footer_month, footer_year):

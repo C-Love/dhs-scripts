@@ -74,8 +74,11 @@ ADDR.gather_data()      # using the method of the ADDR Panel class to get all in
 # BILS.add_bill("01", "1/1/16", "09", 500, 350, "01", "M")
 # BILS.gather_data()
 
-BUDG = MAXIS_panels.STAT_BUDG_panel(MAXIS_case_number, MAXIS_footer_month, MAXIS_footer_year)
-BUDG.change_budget("03/18")
+# BUDG = MAXIS_panels.STAT_BUDG_panel(MAXIS_case_number, MAXIS_footer_month, MAXIS_footer_year)
+# BUDG.change_budget("03/18")
+
+BUSI_02_01 = MAXIS_panels.STAT_BUSI_panel(MAXIS_case_number, MAXIS_footer_month, MAXIS_footer_year, "02", "01")
+BUSI_02_01.create_new("07/15/17", "04", "cash", 800, "1", 150, "1", 120, "01", "02/06/18", 800, 150, 120)
 
 # this outputs the code from above so we can see it worked.
 print(ADDR.case)
@@ -131,6 +134,12 @@ print(ADDR.effective_date)
 #    for bill in BILS.all_bills:
 #        print(bill)
 
-print("Budget is currently: %s-%s - source: %s" % (BUDG.current_budg_start, BUDG.current_budg_end, BUDG.current_budg_src))
-print("HC Application date is %s" % (BUDG.hc_app_date))
-print(BUDG.past_budgets)
+# print("Budget is currently: %s-%s - source: %s" % (BUDG.current_budg_start, BUDG.current_budg_end, BUDG.current_budg_src))
+# print("HC Application date is %s" % (BUDG.hc_app_date))
+# print(BUDG.past_budgets)
+
+print("Self Employment -- for MEMB %s" % (BUSI_02_01.member))
+print("Type of income - %s" % (BUSI_02_01.business_type))
+print("NET: $%s, GROSS: $%s, EXPENSE: $%s for CASH" % (BUSI_02_01.cash_prosp_net, BUSI_02_01.cash_prosp_gross, BUSI_02_01.cash_prosp_exp))
+print("Verified by: %s" % (BUSI_02_01.cash_inc_verif))
+print("Method used: %s established on %s" % (BUSI_02_01.self_emp_method, BUSI_02_01.method_date))
