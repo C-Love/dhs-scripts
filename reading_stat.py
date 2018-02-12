@@ -77,8 +77,17 @@ ADDR.gather_data()      # using the method of the ADDR Panel class to get all in
 # BUDG = MAXIS_panels.STAT_BUDG_panel(MAXIS_case_number, MAXIS_footer_month, MAXIS_footer_year)
 # BUDG.change_budget("03/18")
 
-BUSI_02_01 = MAXIS_panels.STAT_BUSI_panel(MAXIS_case_number, MAXIS_footer_month, MAXIS_footer_year, "02", "01")
-BUSI_02_01.create_new("07/15/17", "04", "cash", 800, "1", 150, "1", 120, "01", "02/06/18", 800, 150, 120)
+# BUSI_02_01 = MAXIS_panels.STAT_BUSI_panel(MAXIS_case_number, MAXIS_footer_month, MAXIS_footer_year, "02", "01")
+# BUSI_02_01.create_new("07/15/17", "04", "cash", 800, "1", 150, "1", 120, "01", "02/06/18", 800, 150, 120)
+
+CARS_01_01 = MAXIS_panels.STAT_CARS_panel(MAXIS_case_number, MAXIS_footer_month, MAXIS_footer_year, "01", "01")
+CARS_01_01.gather_data()
+CARS_01_01.update_verif("1")
+CARS_01_01.update_value(2300, "1")
+
+CARS_01_new = MAXIS_panels.STAT_CARS_panel(MAXIS_case_number, MAXIS_footer_month, MAXIS_footer_year, "01", "02")
+CARS_01_new.create_new("2", 2015, "Ford", "Astro", 4775, "1", "4", "N")
+CARS_01_new.update_amount_owed(2025, "01/25/18", "1")
 
 # this outputs the code from above so we can see it worked.
 print(ADDR.case)
@@ -138,8 +147,18 @@ print(ADDR.effective_date)
 # print("HC Application date is %s" % (BUDG.hc_app_date))
 # print(BUDG.past_budgets)
 
-print("Self Employment -- for MEMB %s" % (BUSI_02_01.member))
-print("Type of income - %s" % (BUSI_02_01.business_type))
-print("NET: $%s, GROSS: $%s, EXPENSE: $%s for CASH" % (BUSI_02_01.cash_prosp_net, BUSI_02_01.cash_prosp_gross, BUSI_02_01.cash_prosp_exp))
-print("Verified by: %s" % (BUSI_02_01.cash_inc_verif))
-print("Method used: %s established on %s" % (BUSI_02_01.self_emp_method, BUSI_02_01.method_date))
+# print("Self Employment -- for MEMB %s" % (BUSI_02_01.member))
+# print("Type of income - %s" % (BUSI_02_01.business_type))
+# print("NET: $%s, GROSS: $%s, EXPENSE: $%s for CASH" % (BUSI_02_01.cash_prosp_net, BUSI_02_01.cash_prosp_gross, BUSI_02_01.cash_prosp_exp))
+# print("Verified by: %s" % (BUSI_02_01.cash_inc_verif))
+# print("Method used: %s established on %s" % (BUSI_02_01.self_emp_method, BUSI_02_01.method_date))
+
+print("Vehicle 1")
+print("%s - %s %s %s" % (CARS_01_01.type, CARS_01_01.year, CARS_01_01.make, CARS_01_01.model))
+print("Trade-In: %s - Loan: %s - Source: %s" % (CARS_01_01.trade_in_value, CARS_01_01.loan_value, CARS_01_01.value_source))
+print("Use: %s" % (CARS_01_01.use))
+
+print("Vehicle 2")
+print("%s - %s %s %s" % (CARS_01_new.type, CARS_01_new.year, CARS_01_new.make, CARS_01_new.model))
+print("Trade-In: %s - Loan: %s - Source: %s" % (CARS_01_new.trade_in_value, CARS_01_new.loan_value, CARS_01_new.value_source))
+print("Use: %s" % (CARS_01_new.use))

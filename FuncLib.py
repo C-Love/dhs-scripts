@@ -6,6 +6,18 @@ import bzio
 global MAXIS_case_number
 
 
+def read_float_from_BZ(length, row, col):
+    MAXIS_number = bzio.ReadScreen(length, row, col)
+    MAXIS_number = MAXIS_number.strip()
+    MAXIS_number = MAXIS_number.replace("_", "")
+
+    if MAXIS_number == "":
+        MAXIS_number = 0
+
+    MAXIS_number = float(MAXIS_number)
+    return MAXIS_number
+
+
 def mainframe_date(date, format):
     date_split = date.split("/")
     format = format.upper()

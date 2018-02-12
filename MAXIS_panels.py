@@ -2107,17 +2107,6 @@ class STAT_BUSI_panel:
                           "N": "No Verification Provided",
                           "_": "Blank"}
 
-    def read_float_from_BZ(self, length, row, col):
-        MAXIS_number = bzio.ReadScreen(length, row, col)
-        MAXIS_number = MAXIS_number.strip()
-        MAXIS_number = MAXIS_number.replace("_", "")
-
-        if MAXIS_number == "":
-            MAXIS_number = 0
-
-        MAXIS_number = float(MAXIS_number)
-        return MAXIS_number
-
     def gather_data(self):
         """Method to read panel and generate class properties.
         Properties created: business_type -- detail of income type code (string)
@@ -2174,23 +2163,23 @@ class STAT_BUSI_panel:
             self.income_end = None
 
         # reads each number from the panel and converts it to a float for maths
-        self.cash_retro_net = self.read_float_from_BZ(8, 8, 55)     # CASH retro NET - from main panel
-        self.cash_prosp_net = self.read_float_from_BZ(8, 8, 69)     # CASH prosp NET - from main panel
+        self.cash_retro_net = FuncLib.read_float_from_BZ(8, 8, 55)     # CASH retro NET - from main panel
+        self.cash_prosp_net = FuncLib.read_float_from_BZ(8, 8, 69)     # CASH prosp NET - from main panel
 
-        self.snap_retro_net = self.read_float_from_BZ(8, 10, 55)     # SNAP retro NET - from main panel
-        self.snap_prosp_net = self.read_float_from_BZ(8, 10, 69)     # SNAP prosp NET - from main panel
+        self.snap_retro_net = FuncLib.read_float_from_BZ(8, 10, 55)     # SNAP retro NET - from main panel
+        self.snap_prosp_net = FuncLib.read_float_from_BZ(8, 10, 69)     # SNAP prosp NET - from main panel
 
-        self.ive_prosp_net = self.read_float_from_BZ(8, 9, 69)     # IV-E prosp NET - from main panel
+        self.ive_prosp_net = FuncLib.read_float_from_BZ(8, 9, 69)     # IV-E prosp NET - from main panel
 
-        self.hc_methA_prosp_net = self.read_float_from_BZ(8, 11, 69)     # HC Method A prosp NET - from main panel
+        self.hc_methA_prosp_net = FuncLib.read_float_from_BZ(8, 11, 69)     # HC Method A prosp NET - from main panel
 
-        self.hc_methB_prosp_net = self.read_float_from_BZ(8, 12, 69)     # HC Method B prosp NET - from main panel
+        self.hc_methB_prosp_net = FuncLib.read_float_from_BZ(8, 12, 69)     # HC Method B prosp NET - from main panel
 
         # reading the hours from the main page
-        self.retro_rept_hrs = self.read_float_from_BZ(3, 13, 60)        # retro reported hours
-        self.prosp_rept_hrs = self.read_float_from_BZ(3, 13, 74)        # prospective reported horus
-        self.min_wage_hrs_retro = self.read_float_from_BZ(3, 14, 69)    # retro minimum wage hours
-        self.min_wage_hrs_prosp = self.read_float_from_BZ(3, 14, 74)    # prospective minimum wage hours
+        self.retro_rept_hrs = FuncLib.read_float_from_BZ(3, 13, 60)        # retro reported hours
+        self.prosp_rept_hrs = FuncLib.read_float_from_BZ(3, 13, 74)        # prospective reported horus
+        self.min_wage_hrs_retro = FuncLib.read_float_from_BZ(3, 14, 69)    # retro minimum wage hours
+        self.min_wage_hrs_prosp = FuncLib.read_float_from_BZ(3, 14, 74)    # prospective minimum wage hours
 
         # reading information about the self employment method
         self_emp_code = bzio.ReadScreen(2, 16, 53)              # reads the code from the panel
@@ -2207,33 +2196,33 @@ class STAT_BUSI_panel:
         FuncLib.transmit()
 
         # reading all the infromation from the pop up and assigning to properties
-        self.cash_retro_gross = self.read_float_from_BZ(8, 9, 43)               # CASH prog information - formatted by function to make FLOAT
-        self.cash_prosp_gross = self.read_float_from_BZ(8, 9, 59)
+        self.cash_retro_gross = FuncLib.read_float_from_BZ(8, 9, 43)               # CASH prog information - formatted by function to make FLOAT
+        self.cash_prosp_gross = FuncLib.read_float_from_BZ(8, 9, 59)
         self.cash_inc_verif = busi_verifications[bzio.ReadScreen(1, 9, 73)]     # assigning full deatil from PF1 menu instead of just the code
-        self.cash_retro_exp = self.read_float_from_BZ(8, 15, 43)
-        self.cash_prosp_exp = self.read_float_from_BZ(8, 15, 59)
+        self.cash_retro_exp = FuncLib.read_float_from_BZ(8, 15, 43)
+        self.cash_prosp_exp = FuncLib.read_float_from_BZ(8, 15, 59)
         self.cash_exp_verif = busi_verifications[bzio.ReadScreen(1, 15, 73)]    # assigning full deatil from PF1 menu instead of just the code
 
-        self.snap_retro_gross = self.read_float_from_BZ(8, 11, 43)              # SNAP prog information - formatted by function to make FLOAT
-        self.snap_prosp_gross = self.read_float_from_BZ(8, 11, 59)
+        self.snap_retro_gross = FuncLib.read_float_from_BZ(8, 11, 43)              # SNAP prog information - formatted by function to make FLOAT
+        self.snap_prosp_gross = FuncLib.read_float_from_BZ(8, 11, 59)
         self.snap_inc_verif = busi_verifications[bzio.ReadScreen(1, 11, 73)]    # assigning full deatil from PF1 menu instead of just the code
-        self.snap_retro_exp = self.read_float_from_BZ(8, 17, 43)
-        self.snap_prosp_exp = self.read_float_from_BZ(8, 17, 59)
+        self.snap_retro_exp = FuncLib.read_float_from_BZ(8, 17, 43)
+        self.snap_prosp_exp = FuncLib.read_float_from_BZ(8, 17, 59)
         self.snap_exp_verif = busi_verifications[bzio.ReadScreen(1, 17, 73)]    # assigning full deatil from PF1 menu instead of just the code
 
-        self.ive_prosp_gross = self.read_float_from_BZ(8, 10, 59)               # IV-E prog information - formatted by function to make FLOAT
+        self.ive_prosp_gross = FuncLib.read_float_from_BZ(8, 10, 59)               # IV-E prog information - formatted by function to make FLOAT
         self.ive_inc_verif = busi_verifications[bzio.ReadScreen(1, 10, 73)]     # assigning full deatil from PF1 menu instead of just the code
-        self.ive_prosp_exp = self.read_float_from_BZ(8, 16, 59)
+        self.ive_prosp_exp = FuncLib.read_float_from_BZ(8, 16, 59)
         self.ive_exp_verif = busi_verifications[bzio.ReadScreen(1, 16, 73)]     # assigning full deatil from PF1 menu instead of just the code
 
-        self.hc_methA_prosp_gross = self.read_float_from_BZ(8, 12, 59)               # HC Method A prog information - formatted by function to make FLOAT
+        self.hc_methA_prosp_gross = FuncLib.read_float_from_BZ(8, 12, 59)               # HC Method A prog information - formatted by function to make FLOAT
         self.hc_methA_inc_verif = busi_verifications[bzio.ReadScreen(1, 12, 73)]     # assigning full deatil from PF1 menu instead of just the code
-        self.hc_methA_prosp_exp = self.read_float_from_BZ(8, 18, 59)
+        self.hc_methA_prosp_exp = FuncLib.read_float_from_BZ(8, 18, 59)
         self.hc_methA_exp_verif = busi_verifications[bzio.ReadScreen(1, 18, 73)]     # assigning full deatil from PF1 menu instead of just the code
 
-        self.hc_methB_prosp_gross = self.read_float_from_BZ(8, 13, 59)               # HC Method B prog information - formatted by function to make FLOAT
+        self.hc_methB_prosp_gross = FuncLib.read_float_from_BZ(8, 13, 59)               # HC Method B prog information - formatted by function to make FLOAT
         self.hc_methB_inc_verif = busi_verifications[bzio.ReadScreen(1, 13, 73)]     # assigning full deatil from PF1 menu instead of just the code
-        self.hc_methB_prosp_exp = self.read_float_from_BZ(8, 19, 59)
+        self.hc_methB_prosp_exp = FuncLib.read_float_from_BZ(8, 19, 59)
         self.hc_methB_exp_verif = busi_verifications[bzio.ReadScreen(1, 19, 73)]     # assigning full deatil from PF1 menu instead of just the code
 
         FuncLib.PF3()           # exiting the pop-up to go back to the main panel
@@ -2243,13 +2232,13 @@ class STAT_BUSI_panel:
         FuncLib.transmit()
 
         # reading all values from the pop-up and assigning to class properties
-        self.inc_est_A_total = self.read_float_from_BZ(8, 7, 54)
-        self.inc_est_B_total = self.read_float_from_BZ(8, 8, 54)
-        self.inc_est_A_exp = self.read_float_from_BZ(8, 11, 54)
-        self.inc_est_B_exp = self.read_float_from_BZ(8, 12, 54)
-        self.inc_est_A_gross = self.read_float_from_BZ(8, 15, 54)
-        self.inc_est_B_gross = self.read_float_from_BZ(8, 16, 54)
-        self.inc_est_hrs = self.read_float_from_BZ(3, 18, 58)
+        self.inc_est_A_total = FuncLib.read_float_from_BZ(8, 7, 54)
+        self.inc_est_B_total = FuncLib.read_float_from_BZ(8, 8, 54)
+        self.inc_est_A_exp = FuncLib.read_float_from_BZ(8, 11, 54)
+        self.inc_est_B_exp = FuncLib.read_float_from_BZ(8, 12, 54)
+        self.inc_est_A_gross = FuncLib.read_float_from_BZ(8, 15, 54)
+        self.inc_est_B_gross = FuncLib.read_float_from_BZ(8, 16, 54)
+        self.inc_est_hrs = FuncLib.read_float_from_BZ(3, 18, 58)
 
         FuncLib.PF3()       # closing the pop-up window
 
@@ -2347,8 +2336,8 @@ class STAT_BUSI_panel:
                                retro_hours -- reported retro hours"""
 
         # navigate to BUSI panel in MAXIS
-        at_BILS = bzio.ReadScreen(4, 2, 51)
-        if at_BILS != "BUSI":
+        at_BUSI = bzio.ReadScreen(4, 2, 51)
+        if at_BUSI != "BUSI":
             FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "BUSI")
         bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
         bzio.WriteScreen(self.instance, 20, 79)
@@ -2422,14 +2411,241 @@ class STAT_BUSI_panel:
 
         self.gather_data()      # filling all class properties
 
+
 class STAT_CARS_panel:
-    def __init__(self, case_number, footer_month, footer_year):
+    """Class refernces the STAT/CARS panel.
+    This class requires MEMBER and INSTANCE parameters.
+    Methods in this class: gather_data -- collect all information from an existing panel and generate all class properties
+                           create_new -- create a new CARS panel
+                           update_value -- change the value of a vehicle
+                           update_verif -- change or add a verification type
+                           update_amount_owed -- change or add an amount owed"""
+    def __init__(self, case_number, footer_month, footer_year, member, instance):
         self.case = case_number
         self.month = footer_month
         self.year = footer_year
+        self.member = member
+        self.instance = instance
+
+    global vehicle_types
+    vehicle_types = {"1": "Car",
+                     "2": "Truck",
+                     "3": "Van",
+                     "4": "Camper",
+                     "5": "Motorcycle",
+                     "6": "Trailer",
+                     "7": "Other"}
+
+    global value_sources
+    value_sources = {"1": "NADA",
+                     "2": "Appraisal Val",
+                     "3": "Client Stmt",
+                     "4": "Other Document"}
+
+    global ownership_verifications
+    ownership_verifications = {"1": "Title",
+                               "2": "License Registration",
+                               "3": "DMV",
+                               "4": "Purchase Agreement",
+                               "5": "Other Document",
+                               "N": "No Verification Provided",
+                               "_": "Blank"}
+
+    global loan_bal_verifications
+    loan_bal_verifications = {"1": "Bank/Lending Institution Statement",
+                              "2": "Private Lender Statement",
+                              "3": "Other Document",
+                              "4": "Pending Out of State Verification",
+                              "N": "No Verification Provided",
+                              "_": "Blank"}
+
+    global vehicle_uses
+    vehicle_uses = {"1": "Primary Vehicle",
+                    "2": "Employment/Training Transportation/Search",
+                    "3": "Disabled Transport",
+                    "4": "Income Producing",
+                    "5": "Used as Home",
+                    "7": "Unlicensed",
+                    "8": "Other Countable",
+                    "9": "Unavailable",
+                    "0": "Long Distance Employment Travel",
+                    "A": "Carry Heating Fuel or Water"}
 
     def gather_data(self):
-        pass
+        """Method to read panel and generate class properties
+        Properties generated: type -- kind of vehicle panel is for - full string from dictionary
+                              year -- year of vehicle - string
+                              make -- make of vehicle - string
+                              model -- Model of vehicle
+                              trade_in_value -- Trade-In value of vehicle - float
+                              loan_value -- Loan Value of vehicle - float
+                              value_source -- source of value identity - full string from dictionary
+                              ownership_verif -- verification detail - full string from dictionary
+                              amount_owed -- value that is still owed on vehicle - float
+                              verif_owed -- verification of the amount still owed - full string from dictionary
+                              owed_date -- date the amount owed was established - string
+                              use -- details of vehicle use - full string from dictionary
+                              hc_clt_benefit -- if vehicle is for MA client - boolean
+                              joint_owner -- if vehicle is jointly owned - boolean
+                              share_ratio -- the ratio that the vehicle is shared at - string"""
+        # navigate to CARS panel in MAXIS
+        at_CARS = bzio.ReadScreen(4, 2, 44)
+        if at_CARS != "CARS":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "CARS")
+        bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
+        bzio.WriteScreen(self.instance, 20, 79)
+        FuncLib.transmit()
+
+        # TODO create and insert method to verify CARS panel exists before trying to read
+
+        self.type = vehicle_types[bzio.ReadScreen(1, 6, 43)]        # readung the type code and filling property with detail from dictionary vehicle_types
+        self.year = bzio.ReadScreen(4, 8, 31)                       # reading the year and blanking out if the field is empty
+        self.year = self.year.replace("_", "")
+        self.make = bzio.ReadScreen(15, 8, 43)                      # reading the make, then formatting the property
+        self.make = self.make.strip()
+        self.make = self.make.replace("_", "")
+        self.model = bzio.ReadScreen(15, 8, 66)                     # reading the model, then formatting the property
+        self.model = self.model.strip()
+        self.model = self.model.replace("_", "")
+        self.trade_in_value = FuncLib.read_float_from_BZ(8, 9, 45)  # reading trade in value as a float
+        self.loan_value = FuncLib.read_float_from_BZ(8, 9, 62)      # reading the load value as a float
+        self.value_source = value_sources[bzio.ReadScreen(1, 9, 80)]                # reading source code and filling detail from value_sources dictionary
+        self.ownership_verif = ownership_verifications[bzio.ReadScreen(1, 10, 60)]  # reading ownership verif and filling detail from dictionary
+        self.amount_owed = FuncLib.read_float_from_BZ(8, 12, 45)                    # reading amount owed as a float
+        self.verif_owed = loan_bal_verifications[bzio.ReadScreen(1, 12, 60)]        # reading owed amnount verif and filling detail from dictionary
+        # reading received date and formatting it as mm/dd/yy
+        self.owed_date = "%s/%s/%s" % (bzio.ReadScreen(2, 13, 43), bzio.ReadScreen(2, 13, 46), bzio.ReadScreen(2, 13, 49))
+        self.use = vehicle_uses[bzio.ReadScreen(1, 15, 43)]         # readung use code and filling detail from vehicle_used dictionary
+
+        if bzio.ReadScreen(1, 15, 76) == "Y":       # reading HC Clt Benefit and saving as boolean
+            self.hc_clt_benefit = True
+        else:
+            self.hc_clt_benefit = False
+
+        if bzio.ReadScreen(1, 16, 43) == "Y":       # reading joint owner code and formatting as boolean
+            self.joint_owner = True
+        else:
+            self.joint_owner = False
+
+        # reading the share ratio and formatting it as x/y
+        self.share_ratio = "%s/%s" % (bzio.ReadScreen(1, 16, 76), bzio.ReadScreen(1, 16, 80))
+
+    def create_new(self, type, year, make, model, trade_in, value_source, use, HC_client, owner_verif="N", share_ratio="1/1"):
+        """Method to create a new CARS panel.
+        Argument requirements: type -- type code - options - 1, 2, 3, 4, 5, 6, 7
+                               year -- vehicle year
+                               make -- vehicle make
+                               model -- vehicle model
+                               trade_in -- trade-in value - as a float
+                               value_source -- source code - options - 1, 2, 3, 4
+                               use -- use code - options - 1, 2, 3, 4, 5, 7, 8, 9, 0, A
+                               HC_client -- Y or N
+                               owner_verif -- ownership verificatio - default to 'N' - options - 1, 2, 3, 4, 5, N
+                               share_ratio -- ratio of 1/1 defaulted - can be changed - should be in x/y format - joint owner determined by this"""
+        # navigate to CARS panel in MAXIS
+        at_CARS = bzio.ReadScreen(4, 2, 44)
+        if at_CARS != "CARS":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "CARS")
+        bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
+        bzio.WriteScreen("NN", 20, 79)
+        FuncLib.transmit()
+
+        instance = bzio.ReadScreen(2, 2, 72).strip()    # assigning the instance to class variable
+        if len(instance) == 1:
+            instance = "0" + instance
+        self.instance = instance
+
+        bzio.WriteScreen(type, 6, 43)           # writing type code to the new panel
+        bzio.WriteScreen(year, 8, 31)           # writing the year, make, model to the panel
+        bzio.WriteScreen(make, 8, 43)
+        bzio.WriteScreen(model, 8, 66)
+        bzio.WriteScreen(trade_in, 9, 45)       # writing the trade-in value
+        loan_val = trade_in * .9                # calculating the loan value from trade in value
+        loan_val = (25.0 * round(loan_val / 25.0))  # formatting the number to be a multiple of 25
+        bzio.WriteScreen(loan_val, 9, 62)       # writing in the loan value
+        bzio.WriteScreen(value_source, 9, 80)   # writing in the value source
+        bzio.WriteScreen(use, 15, 43)           # writing in the use code
+        bzio.WriteScreen(HC_client, 15, 76)     # writing in the HC Client Y/N code
+        bzio.WriteScreen(owner_verif, 10, 60)   # writing in the verif of ownership
+        if share_ratio == "1/1":                # writing the share ratio and joint owner code
+            bzio.WriteScreen("N", 16, 43)       # joint owner code is determined by the share ratio provided
+            bzio.WriteScreen("1", 16, 76)
+            bzio.WriteScreen("1", 16, 80)
+        else:
+            bzio.WriteScreen("Y", 16, 43)
+            bzio.WriteScreen(share_ratio[0], 16, 76)
+            bzio.WriteScreen(share_ratio[2], 16, 80)
+
+        self.gather_data()      # filling all the class properties
+
+    def update_value(self, trade_in, value_source):
+        """Method to update only the trade-in and loan value and source code
+        Argument requirements: trade_in -- trade-in value - as a float
+                               value_source -- source code - options - 1, 2, 3, 4 """
+        # navigate to CARS panel in MAXIS
+        at_CARS = bzio.ReadScreen(4, 2, 44)
+        if at_CARS != "CARS":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "CARS")
+        bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
+        bzio.WriteScreen(self.instance, 20, 79)
+        FuncLib.transmit()
+
+        FuncLib.PF9()       # puts panel in edit mode
+
+        # TODO create and insert method to verify CARS panel is in edit mode
+
+        bzio.WriteScreen("        ", 9, 45)     # blanking out previous entry
+        bzio.WriteScreen("        ", 9, 62)
+        bzio.WriteScreen(trade_in, 9, 45)       # writing the trade-in value
+        loan_val = trade_in * .9                # calculating the loan value from trade in value
+        loan_val = (25.0 * round(loan_val / 25.0))  # formatting the number to be a multiple of 25
+        bzio.WriteScreen(loan_val, 9, 62)       # writing in the loan value
+        bzio.WriteScreen(value_source, 9, 80)   # writing in the value source
+
+        self.gather_data()      # filling all the class properties
+
+    def update_verif(self, owner_verif):
+        """Method to update the ownershiup verification code
+        owner_verif -- ownership verificatio - options - 1, 2, 3, 4, 5, N"""
+        # navigate to CARS panel in MAXIS
+        at_CARS = bzio.ReadScreen(4, 2, 44)
+        if at_CARS != "CARS":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "CARS")
+        bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
+        bzio.WriteScreen(self.instance, 20, 79)
+        FuncLib.transmit()
+
+        FuncLib.PF9()       # puts panel in edit mode
+
+        # TODO create and insert method to verify CARS panel is in edit mode
+
+        bzio.WriteScreen(owner_verif, 10, 60)   # writing in the verif of ownership
+
+        self.gather_data()      # filling all the class properties
+
+    def update_amount_owed(self, amount, owed_date, owed_verif):
+        """Method to update the amount, verif, date of a loan balance
+        Arguments: amount -- value of the loan balance
+                   owed_date -- date of the loan balance - mm/dd/yy format
+                   owed_verif -- verif code of the loan balance - options: 1, 2, 3, 4, N"""
+        # navigate to CARS panel in MAXIS
+        at_CARS = bzio.ReadScreen(4, 2, 44)
+        if at_CARS != "CARS":
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "CARS")
+        bzio.WriteScreen(self.member, 20, 76)           # navigating to the correct member and instance of the panel
+        bzio.WriteScreen(self.instance, 20, 79)
+        FuncLib.transmit()
+
+        FuncLib.PF9()       # puts panel in edit mode
+
+        # TODO create and insert method to verify CARS panel is in edit mode
+
+        bzio.WriteScreen("        ", 12, 45)    # blanking the field first so leftovers are not changing the amount
+        bzio.WriteScreen(amount, 12, 45)    # writing the amount of loan balance to panel
+        bzio.WriteScreen(owed_verif, 12, 60)    # writing the verif code of loan balance
+        FuncLib.write_mainframe_date(owed_date, "XX XX XX", [13, 43], [13, 46], [13, 49])   # writing the date to the panel using function
+
+        self.gather_data()      # filling all the class properties
 
 
 class STAT_CASH_panel:
