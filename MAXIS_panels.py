@@ -8,6 +8,20 @@ Calling class_name.gather_data() will create class properties for each of the da
 Many of the STAT panels will also have a create_new method to create a new panel."""
 
 
+class FUNC_COMD_panel:
+    """Template of MAXIS Panel classes"""
+    def __init__(self, case_number, footer_month, footer_year, member, instance):
+        self.case = case_number         
+        self.month = footer_month
+        self.year = footer_year
+        self.member = member
+        self.instance = instance
+
+    def gather_data(self):
+        """This method never takes arguments and outputs all of the information from the panel."""
+
+
+
 class STAT_ABPS_panel:
     """class references STAT/ABPS
     Methods: gather_data -- get all information from existing panel"""
@@ -2649,22 +2663,89 @@ class STAT_CARS_panel:
 
 
 class STAT_CASH_panel:
-    def __init__(self, case_number, footer_month, footer_year):
+    """Class to reference STAT/CASH penel.
+    Methods in this class: gather_data -- get information from the panel
+                           update_cash -- add new panel or change value."""
+    def __init__(self, case_number, footer_month, footer_year, member):
         self.case = case_number
         self.month = footer_month
         self.year = footer_year
+        self.member
 
     def gather_data(self):
-        pass
+        """Method to gather information from the panel.
+        Properties created: amount -- value of cash indicated - float"""
+        # navigate to the STAT/CASH panel
+        at_CASH = bzio.ReadScreen(4, 2, 42)
+        if at_CASH != "CASH":
+            # navigate to the STAT/CASH panel
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "CASH")
+        bzio.WriteScreen(self.member, 20, 76)       # going to the panel for the correct member
+        FuncLib.transmit()
+
+        self.amount = FuncLib.read_float_from_BZ(8, 8, 39)  # reading the value as a float for maths
+
+    def update_cash(self, amount):
+        # navigate to the STAT/CASH panel
+        at_CASH = bzio.ReadScreen(4, 2, 42)
+        if at_CASH != "CASH":
+            # navigate to the STAT/CASH panel
+            FuncLib.navigate_to_MAXIS_screen(self.case, self.month, self.year, "STAT", "CASH")
+        bzio.WriteScreen(self.member, 20, 76)       # going to the panel for the correct member
+        FuncLib.transmit()
+
+        # putting the panel in edit mode
+        if bzio.ReadScreen(1, 2, 73) == "0":    # if no panel exists - create a new one
+            bzio.WriteScreen("NN", 20, 79)
+            FuncLib.transmit()
+        else:                                   # if a panel does exists - put in edit mode
+            FuncLib.PF9()
+
+        # FIXME add function to be sure CASH panel is in edit mode.
+
+        if amount is 0:                         # if the amount is 0 - the cleanest way is to delete the panel
+            bzio.WriteScreen("DEL", 20, 71)     # this goes in the command line
+        else:                                       # if a value actually exists then it will be writen to the panel
+            bzio.WriteScreen("        ", 8, 39)     # blanking the line out so that we don't get jumbled values
+            bzio.WriteScreen(amount, 8, 39)         # writing the value in to the panel
+
+        FuncLib.transmit()                      # submitting the panel - saving the value or deleting the panel
 
 
 class STAT_COEX_panel:
-    def __init__(self, case_number, footer_month, footer_year):
+    """Class references the STAT/COEX panel.
+    Methods in this class: gather_data -- collecting all information from the panels and assigning it properties
+                           update_support -- add or update amount of support order
+                           update_alimony -- add or update amount of alimony order
+                           update_tax_dep -- add pr update amount for tax dependents
+                           update_other -- add or update amount of other expense order"""
+    def __init__(self, case_number, footer_month, footer_year, member):
         self.case = case_number
         self.month = footer_month
         self.year = footer_year
+        self.member
 
     def gather_data(self):
+        """Method will collect all the information from the panel and assign it to class properties.
+        Propertis created: support_retro --
+                           support_prosp --
+                           support_verif --
+                           support_hc_est --
+                           alimony_retro --
+                           alimony_prosp --
+                           alimony_verif --
+                           alimony_hc_est --
+                           tax_dep_retro --
+                           tax_dep_prosp --
+                           tax_del_verif --
+                           tax_dep_hc_est --
+                           other_retro --
+                           other_prosp --
+                           other_verif --
+                           other_hc_est --
+                           total_retro --
+                           total_prosp --
+                           change_in_fin_circ --"""
         pass
 
 
